@@ -25,6 +25,7 @@ class StoreStaffRequest extends FormRequest
             'id_number' => 'nullable|string|max:50',
             'photo_profile' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'password' => 'nullable|string|min:8',
+            'email' => 'nullable|email|max:255',
 
             // Descriptor wajah hasil ekstraksi face-api.js (128 angka)
             'face_descriptor' => 'nullable|json',

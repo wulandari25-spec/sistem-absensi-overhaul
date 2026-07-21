@@ -1,7 +1,8 @@
 #!/bin/sh
 
 export APP_DEBUG=true
-export SESSION_DRIVER=file
+export PHP_CLI_SERVER_WORKERS=4
+export SESSION_DRIVER=database
 export CACHE_STORE=file
 export LOG_CHANNEL=stderr
 export APP_URL=https://sistem-absensi-overhaul-production.up.railway.app
