@@ -196,13 +196,13 @@ private function hitungEuclideanDistance(array $a, array $b): float
 
     public function getHourlyPopulation(): array
     {
-        $today = today();
-        $attendancesToday = Attendance::whereDate('checked_at', $today)->get();
+        // Ambil absensi 24 jam terakhir agar grafik selalu terisi terlepas dari zona waktu server
+        $attendances = Attendance::where('checked_at', '>=', now()->subHours(24))->get();
 
         $checkIns = array_fill(0, 24, 0);
         $checkOuts = array_fill(0, 24, 0);
 
-        foreach ($attendancesToday as $att) {
+        foreach ($attendances as $att) {
             if ($att->checked_at) {
                 $h = (int) $att->checked_at->format('H');
                 if ($att->status === AttendanceStatus::CHECK_IN) {
