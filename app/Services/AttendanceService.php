@@ -197,30 +197,28 @@ private function hitungEuclideanDistance(array $a, array $b): float
     public function getHourlyPopulation(): array
     {
         $today = today();
-        $driver = DB::connection()->getDriverName();
+        $attendancesToday = Attendance::whereDate('checked_at', $today)->get();
 
-        $hourExpression = $driver === 'sqlite'
-            ? "CAST(strftime('%H', checked_at) AS INTEGER)"
-            : "HOUR(checked_at)";
+        $checkIns = array_fill(0, 24, 0);
+        $checkOuts = array_fill(0, 24, 0);
 
-        $checkInsRaw = Attendance::checkIns()
-            ->whereDate('checked_at', $today)
-            ->selectRaw("{$hourExpression} as hour_num, COUNT(*) as total")
-            ->groupBy('hour_num')
-            ->pluck('total', 'hour_num');
-
-        $checkOutsRaw = Attendance::checkOuts()
-            ->whereDate('checked_at', $today)
-            ->selectRaw("{$hourExpression} as hour_num, COUNT(*) as total")
-            ->groupBy('hour_num')
-            ->pluck('total', 'hour_num');
+        foreach ($attendancesToday as $att) {
+            if ($att->checked_at) {
+                $h = (int) $att->checked_at->format('H');
+                if ($att->status === AttendanceStatus::CHECK_IN) {
+                    $checkIns[$h]++;
+                } elseif ($att->status === AttendanceStatus::CHECK_OUT) {
+                    $checkOuts[$h]++;
+                }
+            }
+        }
 
         $hours = [];
         for ($h = 0; $h < 24; $h++) {
             $hours[] = [
                 'hour' => sprintf('%02d:00', $h),
-                'check_ins' => (int) ($checkInsRaw[$h] ?? 0),
-                'check_outs' => (int) ($checkOutsRaw[$h] ?? 0),
+                'check_ins' => $checkIns[$h],
+                'check_outs' => $checkOuts[$h],
             ];
         }
 
