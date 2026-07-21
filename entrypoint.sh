@@ -33,8 +33,9 @@ fi
 # Create storage symlink
 php artisan storage:link || true
 
-# Run fresh migrations & seeders to guarantee all tables are created
-php artisan migrate:fresh --seed --force || php artisan migrate --force || true
+# Run migrations & seeders safely without wiping existing attendance data on restart
+php artisan migrate --force || true
+php artisan db:seed --force || true
 
 # Clear cache
 php artisan config:clear || true
