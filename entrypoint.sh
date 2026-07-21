@@ -5,7 +5,8 @@ mkdir -p database storage/framework/views storage/framework/cache/data storage/f
 touch database/database.sqlite
 chmod -R 777 storage bootstrap/cache database
 
-# Create storage symlink
+# Create storage symlink and key if missing
+php artisan key:generate --force || true
 php artisan storage:link || true
 
 # Run migrations & seeders gracefully (won't crash container if DB is initializing)
