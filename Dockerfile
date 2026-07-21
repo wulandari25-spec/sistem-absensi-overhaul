@@ -32,9 +32,9 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --igno
 # Build frontend assets
 RUN npm install && npm run build
 
-# Set permissions and ensure SQLite fallback exists
-RUN touch database/database.sqlite && chmod -R 777 storage bootstrap/cache database
+# Set permissions and entrypoint execution
+RUN chmod +x /app/entrypoint.sh && chmod -R 777 storage bootstrap/cache database
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "composer dump-autoload --optimize && php artisan package:discover --ansi && php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:${PORT:-8080} -t public"]
+CMD ["/app/entrypoint.sh"]
