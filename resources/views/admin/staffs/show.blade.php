@@ -1,0 +1,217 @@
+@extends('layouts.app')
+
+@section('title', 'Detail Pegawai')
+@section('header', 'Detail Pegawai')
+
+@section('content')
+<div class="max-w-4xl mx-auto space-y-6" x-data="{ showManualAttendanceModal: false }">
+    @if(session('success'))
+    <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>✅ {{ session('success') }}</div>
+    @endif
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Kartu Info Utama -->
+        <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg p-8">
+            <div class="flex items-start justify-between mb-6">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kode Pegawai</p>
+                    <p class="text-2xl font-bold text-brand-600 dark:text-brand-400 font-mono">{{ $staff->staff_code }}</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg {{ $staff->is_active_onsite ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400' }} text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full {{ $staff->is_active_onsite ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
+                    {{ $staff->is_active_onsite ? 'Di Area' : 'Di Luar' }}
+                </span>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap</p>
+                    <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $staff->name }}</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instansi</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->institution }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Departemen</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->department ?? '-' }}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Posisi/Jabatan</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->position ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nomor Telepon</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->phone ?? '-' }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nomor Identitas</p>
+                    <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->id_number ?? '-' }}</p>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status Face Data</p>
+                    @if($staff->face_descriptor)
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            Terdaftar
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                            Belum Terdaftar
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                <a href="{{ route('admin.staffs.index') }}" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                    ← Kembali
+                </a>
+                @if(!auth()->user()->isK3())
+                <div class="flex gap-3">
+                    <button @click="showManualAttendanceModal = true" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-450 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Pencatatan Manual
+                    </button>
+                    <a href="{{ route('admin.staffs.edit', $staff) }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Edit
+                    </a>
+                    <form action="{{ route('admin.staffs.destroy', $staff) }}" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" onclick="return confirm('Yakin ingin menonaktifkan pegawai ini?')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Nonaktifkan
+                        </button>
+                    </form>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Foto Profil -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg p-6 flex flex-col items-center justify-center text-center">
+            @if($staff->photo_profile)
+                <img src="{{ asset('storage/' . $staff->photo_profile) }}" alt="{{ $staff->name }}" class="w-32 h-32 rounded-full object-cover mb-4 border-4 border-brand-100 dark:border-brand-950/50">
+            @else
+                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-brand-400 to-indigo-500 flex items-center justify-center text-white text-5xl font-bold mb-4">
+                    {{ substr($staff->name, 0, 1) }}
+                </div>
+            @endif
+            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $staff->name }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono font-bold">{{ $staff->staff_code }}</p>
+            
+            <div class="w-full border-t border-slate-100 dark:border-slate-800/80 my-4 pt-4 flex flex-col items-center">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">QR Code Pegawai</p>
+                <div class="bg-white p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner mb-3">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ $staff->staff_code }}" alt="QR Code {{ $staff->name }}" class="w-28 h-28">
+                </div>
+                <button onclick="window.print()" class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-500 font-bold hover:underline flex items-center gap-1">
+                    🖨️ Cetak Kartu ID / QR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riwayat Absensi Terbaru -->
+    @if($staff->attendances->count() > 0)
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Riwayat Absensi Terbaru</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                        <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Waktu</th>
+                        <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Tipe/Status Kehadiran</th>
+                        <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Metode</th>
+                        <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3">Keterangan / Catatan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($staff->attendances as $attendance)
+                    <tr class="border-b border-slate-50 dark:border-slate-800/50">
+                        <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $attendance->checked_at->format('d M Y H:i') }}</td>
+                        <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">
+                            <span class="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-{{ $attendance->status->color() }}-50 dark:bg-{{ $attendance->status->color() }}-950/50 text-{{ $attendance->status->color() }}-700 dark:text-{{ $attendance->status->color() }}-400 border border-{{ $attendance->status->color() }}-100 dark:border-{{ $attendance->status->color() }}-800">
+                                {{ $attendance->status->label() }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">
+                            <span class="inline-flex items-center gap-1">
+                                <span>{{ $attendance->method ? $attendance->method->icon() : '📝' }}</span>
+                                <span>{{ $attendance->method ? $attendance->method->label() : 'Manual' }}</span>
+                            </span>
+                        </td>
+                        <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate" title="{{ $attendance->notes }}">
+                            {{ $attendance->notes ?? '-' }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Pencatatan Manual (Masuk/Izin/Sakit) -->
+    <div x-show="showManualAttendanceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" x-transition>
+        <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6" @click.away="showManualAttendanceModal = false">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Pencatatan Kehadiran Manual</h3>
+                <button @click="showManualAttendanceModal = false" class="text-slate-400 hover:text-slate-650 dark:hover:text-slate-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <form action="{{ route('admin.staffs.attendance.store', $staff) }}" method="POST" class="space-y-4" x-data="{ statusType: 'check_in' }">
+                @csrf
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Status Kehadiran</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label :class="statusType === 'check_in' ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
+                            <input type="radio" name="status" value="check_in" x-model="statusType" class="sr-only">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">✅ Masuk</span>
+                        </label>
+                        <label :class="statusType === 'permit' ? 'border-amber-500 ring-2 ring-amber-500/25 bg-amber-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
+                            <input type="radio" name="status" value="permit" x-model="statusType" class="sr-only">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">📝 Izin</span>
+                        </label>
+                        <label :class="statusType === 'sick' ? 'border-rose-500 ring-2 ring-rose-500/25 bg-rose-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
+                            <input type="radio" name="status" value="sick" x-model="statusType" class="sr-only">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">🤒 Sakit</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="notes" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Alasan / Keterangan</label>
+                    <textarea 
+                        name="notes" 
+                        id="notes" 
+                        rows="3" 
+                        :required="statusType !== 'check_in'" 
+                        :placeholder="statusType === 'check_in' ? 'Tuliskan catatan opsional (misal: masuk lembur, masuk telat)...' : 'Tuliskan alasan keterangan wajib (misal: sakit demam, keperluan dinas)...'" 
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    ></textarea>
+                </div>
+                
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" @click="showManualAttendanceModal = false" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-brand-500/25 transition-all">Simpan Catatan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
