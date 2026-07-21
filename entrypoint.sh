@@ -1,6 +1,9 @@
 #!/bin/sh
 
 export APP_DEBUG=true
+export SESSION_DRIVER=file
+export CACHE_STORE=file
+export LOG_CHANNEL=stderr
 
 # Ensure SQLite fallback file exists
 mkdir -p database storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs
