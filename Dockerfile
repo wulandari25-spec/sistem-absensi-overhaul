@@ -32,9 +32,9 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --igno
 # Build frontend assets
 RUN npm install && npm run build
 
-# Set permissions
-RUN chmod -R 777 storage bootstrap/cache
+# Set permissions and ensure SQLite fallback exists
+RUN touch database/database.sqlite && chmod -R 777 storage bootstrap/cache database
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "composer dump-autoload --optimize && php artisan package:discover --ansi && php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+CMD ["sh", "-c", "composer dump-autoload --optimize && php artisan package:discover --ansi && php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:${PORT:-8080} -t public"]
