@@ -6,6 +6,19 @@ export CACHE_STORE=file
 export LOG_CHANNEL=stderr
 export APP_URL=https://sistem-absensi-overhaul-production.up.railway.app
 
+# Database auto-configuration (MySQL if Railway MySQL plugin present, otherwise SQLite)
+if [ -n "$MYSQLHOST" ]; then
+    export DB_CONNECTION=mysql
+    export DB_HOST="$MYSQLHOST"
+    export DB_PORT="${MYSQLPORT:-3306}"
+    export DB_DATABASE="${MYSQLDATABASE:-railway}"
+    export DB_USERNAME="${MYSQLUSER:-root}"
+    export DB_PASSWORD="$MYSQLPASSWORD"
+elif [ "$DB_HOST" = "127.0.0.1" ] || [ -z "$DB_HOST" ]; then
+    export DB_CONNECTION=sqlite
+    export DB_DATABASE=/app/database/database.sqlite
+fi
+
 # Ensure SQLite fallback file exists
 mkdir -p database storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs
 touch database/database.sqlite
