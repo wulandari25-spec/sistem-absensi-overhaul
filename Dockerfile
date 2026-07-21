@@ -26,8 +26,8 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
-# Install PHP dependencies ignoring platform requirements
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
+# Install PHP dependencies ignoring platform requirements & skipping scripts during image build
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs --no-scripts
 
 # Build frontend assets
 RUN npm install && npm run build
@@ -37,4 +37,4 @@ RUN chmod -R 777 storage bootstrap/cache
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+CMD ["sh", "-c", "composer dump-autoload --optimize && php artisan package:discover --ansi && php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
