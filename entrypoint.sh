@@ -4,6 +4,7 @@ export APP_DEBUG=true
 export SESSION_DRIVER=file
 export CACHE_STORE=file
 export LOG_CHANNEL=stderr
+export APP_URL=https://sistem-absensi-overhaul-production.up.railway.app
 
 # Ensure SQLite fallback file exists
 mkdir -p database storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs

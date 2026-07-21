@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', 'https://sistem-absensi-overhaul-production.up.railway.app'),
 
     /*
     |--------------------------------------------------------------------------
