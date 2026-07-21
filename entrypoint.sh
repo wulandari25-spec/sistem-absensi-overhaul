@@ -1,17 +1,22 @@
 #!/bin/sh
 
+export APP_DEBUG=true
+
 # Ensure SQLite fallback file exists
 mkdir -p database storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs
 touch database/database.sqlite
 chmod -R 777 storage bootstrap/cache database
 
-# Create storage symlink and key if missing
-php artisan key:generate --force || true
+# Ensure APP_KEY exists
+if [ -z "$APP_KEY" ]; then
+    php artisan key:generate --force || true
+fi
+
+# Create storage symlink
 php artisan storage:link || true
 
-# Run migrations & seeders gracefully (won't crash container if DB is initializing)
-php artisan migrate --force || true
-php artisan db:seed --force || true
+# Run fresh migrations & seeders to guarantee all tables are created
+php artisan migrate:fresh --seed --force || php artisan migrate --force || true
 
 # Clear cache
 php artisan config:clear || true
