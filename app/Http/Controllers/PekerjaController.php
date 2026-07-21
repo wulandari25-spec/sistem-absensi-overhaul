@@ -1,47 +1,50 @@
 <?php
-// app/Http/Controllers/PekerjaController.php
+
+namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\PekerjaOutsourcing;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
-public function store(Request $request)
+class PekerjaController extends Controller
 {
-    $data = $request->validate([
-        'nik'                => 'required|string|unique:pekerja_outsourcings,nik',
-        'nama'               => 'required|string|max:255',
-        'email'              => 'required|email|unique:users,email',
-        'password'           => 'required|string|min:8',
-        'vendor_id'          => 'required|exists:vendors,id',
-        'unit_instalasi_id'  => 'required|exists:unit_instalasis,id',
-        'foto_referensi'     => 'required|string',
-        'face_descriptor'    => 'required|string',
-    ]);
-
-    DB::transaction(function () use ($data) {
-        // 1. Buat akun User untuk login
-        $user = User::create([
-            'name'     => $data['nama'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => 'karyawan',
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'nik'                => 'required|string|unique:pekerja_outsourcings,nik',
+            'nama'               => 'required|string|max:255',
+            'email'              => 'required|email|unique:users,email',
+            'password'           => 'required|string|min:8',
+            'vendor_id'          => 'required|exists:vendors,id',
+            'unit_instalasi_id'  => 'required|exists:unit_instalasis,id',
+            'foto_referensi'     => 'required|string',
+            'face_descriptor'    => 'required|string',
         ]);
 
-        // 2. Simpan foto referensi
-        $fotoPath = $this->simpanFotoBase64($data['foto_referensi'], $data['nik']);
+        DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name'     => $data['nama'],
+                'email'    => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role'     => 'karyawan',
+            ]);
 
-        // 3. Buat data Pekerja Outsourcing, terhubung ke User
-        PekerjaOutsourcing::create([
-            'user_id'           => $user->id,
-            'nik'               => $data['nik'],
-            'nama'              => $data['nama'],
-            'vendor_id'         => $data['vendor_id'],
-            'unit_instalasi_id' => $data['unit_instalasi_id'],
-            'foto_referensi'    => $fotoPath,
-            'face_descriptor'   => json_decode($data['face_descriptor']),
-            'status'            => 'aktif',
-        ]);
-    });
+            $fotoPath = $data['foto_referensi'];
 
-    return redirect()->route('pekerja.index')->with('success', 'Pekerja & akun login berhasil dibuat.');
+            PekerjaOutsourcing::create([
+                'user_id'           => $user->id,
+                'nik'               => $data['nik'],
+                'nama'              => $data['nama'],
+                'vendor_id'         => $data['vendor_id'],
+                'unit_instalasi_id' => $data['unit_instalasi_id'],
+                'foto_referensi'    => $fotoPath,
+                'face_descriptor'   => json_decode($data['face_descriptor']),
+                'status'            => 'aktif',
+            ]);
+        });
+
+        return redirect()->route('pekerja.index')->with('success', 'Pekerja & akun login berhasil dibuat.');
+    }
 }
