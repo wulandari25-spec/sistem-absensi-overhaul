@@ -24,7 +24,10 @@ class OutsourcingStaffSeeder extends Seeder
         ];
 
         foreach ($staffData as $data) {
-            OutsourcingStaff::create($data);
+            OutsourcingStaff::firstOrCreate(
+                ['staff_code' => $data['staff_code']],
+                $data
+            );
         }
     }
 }
