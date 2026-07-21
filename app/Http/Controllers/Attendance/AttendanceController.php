@@ -36,8 +36,8 @@ class AttendanceController extends Controller
             'face_descriptor' => 'required_if:method,face_recognition|array',
             'proof_photo' => 'nullable|string',
             'confidence_score' => 'nullable|numeric',
-            'qr_token' => 'required_without:scanned_code|nullable|string',
-            'scanned_code' => 'required_without:qr_token|nullable|string',
+            'qr_token' => 'nullable|string',
+            'scanned_code' => 'nullable|string',
         ]);
 
         $method = AttendanceMethod::from($request->input('method'));
