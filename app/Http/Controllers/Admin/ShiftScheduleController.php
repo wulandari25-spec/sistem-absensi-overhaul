@@ -10,8 +10,22 @@ use App\Models\Shift;
 use App\Models\StaffSchedule;
 use Carbon\Carbon;
 
-class ShiftScheduleController extends Controller
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class ShiftScheduleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware(function ($request, $next) {
+                if ($request->user() && !$request->user()->isAdmin() && in_array($request->route()->getActionMethod(), ['generate', 'destroy'])) {
+                    abort(403, 'Akses ditolak: Hanya Administrator yang diizinkan mengelola jadwal shift.');
+                }
+                return $next($request);
+            }),
+        ];
+    }
     public function index(Request $request)
     {
         $year = $request->input('year', Carbon::now()->year);

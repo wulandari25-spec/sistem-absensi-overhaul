@@ -46,6 +46,7 @@
             </button>
         </form>
 
+        @if(auth()->user()->isAdmin())
         <div class="flex gap-2">
             <form method="POST" action="{{ route('admin.schedules.generate') }}">
                 @csrf
@@ -66,6 +67,7 @@
                 </button>
             </form>
         </div>
+        @endif
     </div>
 
     {{-- Shift Legends --}}
