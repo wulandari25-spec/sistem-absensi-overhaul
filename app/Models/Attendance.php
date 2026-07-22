@@ -13,7 +13,7 @@ class Attendance extends Model
     use HasFactory;
 
     protected $fillable = [
-        'staff_id', 'verified_by', 'geofence_zone_id', 'method', 'status',
+        'staff_id', 'verified_by', 'geofence_zone_id', 'shift_id', 'method', 'status',
         'latitude', 'longitude', 'proof_photo', 'confidence_score',
         'notes', 'is_flagged', 'flag_reason', 'device_info', 'checked_at',
     ];
@@ -44,6 +44,11 @@ class Attendance extends Model
     public function geofenceZone(): BelongsTo
     {
         return $this->belongsTo(GeofenceZone::class);
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function scopeCheckIns($query)

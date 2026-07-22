@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             GeofenceZoneSeeder::class,
             OutsourcingStaffSeeder::class,
+            ShiftSeeder::class,
         ]);
     }
 }

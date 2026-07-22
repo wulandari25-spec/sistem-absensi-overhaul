@@ -55,9 +55,16 @@ class AttendanceService
                 $flagReason = "Skor kecocokan wajah rendah: {$confidenceScore}";
             }
 
+            $todayDate = now()->format('Y-m-d');
+            $schedule = \App\Models\StaffSchedule::where('staff_id', $staffId)
+                ->where('schedule_date', $todayDate)
+                ->first();
+            $shiftId = $schedule?->shift_id;
+
             $attendance = Attendance::create([
                 'staff_id' => $staffId,
                 'geofence_zone_id' => $zone?->id,
+                'shift_id' => $shiftId,
                 'method' => $method,
                 'status' => AttendanceStatus::CHECK_IN,
                 'latitude' => $lat,
@@ -104,9 +111,16 @@ class AttendanceService
 
             $zone = $this->geofenceService->validatePosition($lat, $lng);
 
+            $todayDate = now()->format('Y-m-d');
+            $schedule = \App\Models\StaffSchedule::where('staff_id', $staffId)
+                ->where('schedule_date', $todayDate)
+                ->first();
+            $shiftId = $schedule?->shift_id;
+
             $attendance = Attendance::create([
                 'staff_id' => $staffId,
                 'geofence_zone_id' => $zone?->id,
+                'shift_id' => $shiftId,
                 'method' => $method,
                 'status' => AttendanceStatus::CHECK_OUT,
                 'latitude' => $lat,

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\GeofenceZoneController;
+use App\Http\Controllers\Admin\ShiftScheduleController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Attendance\FaceRecognitionController;
 use App\Http\Controllers\Attendance\QrCodeController;
@@ -75,6 +76,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     // Laporan presensi
     Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // Penjadwalan shift
+    Route::get('/schedules', [ShiftScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/schedules/generate', [ShiftScheduleController::class, 'generate'])->name('schedules.generate');
+    Route::delete('/schedules/clear', [ShiftScheduleController::class, 'destroy'])->name('schedules.clear');
 });
 
 // API Routes merged here for convenience (normally in api.php)
