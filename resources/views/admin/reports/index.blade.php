@@ -176,7 +176,7 @@
     </div>
 
     {{-- Tab Switcher --}}
-    <div class="no-print flex border-b border-slate-200 dark:border-slate-800 gap-2">
+    <div class="no-print print:hidden flex border-b border-slate-200 dark:border-slate-800 gap-2">
         <a href="{{ request()->fullUrlWithQuery(['report_type' => 'log']) }}" class="px-5 py-3 text-sm font-bold border-b-2 {{ $reportType === 'log' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400' }} transition-all flex items-center gap-1.5">
             <span>📝</span> Log Aktivitas Absensi
         </a>
