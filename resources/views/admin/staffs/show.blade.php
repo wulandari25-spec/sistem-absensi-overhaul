@@ -123,10 +123,41 @@
     </div>
 
     <!-- Riwayat Absensi Terbaru -->
-    @if($staff->attendances->count() > 0)
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Riwayat Absensi Terbaru</h3>
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Riwayat Kehadiran Pegawai</h3>
+            
+            <form method="GET" action="{{ route('admin.staffs.show', $staff) }}" class="flex flex-wrap items-center gap-2">
+                {{-- Dropdown Bulan --}}
+                <select name="month" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+                    <option value="">-- Pilih Bulan --</option>
+                    @foreach([
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ] as $num => $name)
+                        <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
+                    @endforeach
+                </select>
+
+                {{-- Dropdown Tahun --}}
+                <select name="year" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+                    <option value="">-- Pilih Tahun --</option>
+                    @foreach([2025, 2026, 2027] as $y)
+                        <option value="{{ $y }}" {{ request('year', 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+
+                <button type="submit" class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-md transition-all">
+                    Filter
+                </button>
+                
+                @if(request()->has('month') || request()->has('year'))
+                    <a href="{{ route('admin.staffs.show', $staff) }}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        Reset
+                    </a>
+                @endif
+            </form>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -139,9 +170,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($staff->attendances as $attendance)
+                    @forelse($attendances as $attendance)
                     <tr class="border-b border-slate-50 dark:border-slate-800/50">
-                        <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $attendance->checked_at->format('d M Y H:i') }}</td>
+                        <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                            {{ $attendance->checked_at->translatedFormat('d M Y H:i') }}
+                        </td>
                         <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">
                             <span class="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-{{ $attendance->status->color() }}-50 dark:bg-{{ $attendance->status->color() }}-950/50 text-{{ $attendance->status->color() }}-700 dark:text-{{ $attendance->status->color() }}-400 border border-{{ $attendance->status->color() }}-100 dark:border-{{ $attendance->status->color() }}-800">
                                 {{ $attendance->status->label() }}
@@ -157,12 +190,24 @@
                             {{ $attendance->notes ?? '-' }}
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+                            <div class="text-2xl mb-2">📭</div>
+                            <p class="text-sm font-semibold">Tidak ada riwayat kehadiran ditemukan.</p>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+        
+        @if($attendances->hasPages())
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+            {{ $attendances->links() }}
+        </div>
+        @endif
     </div>
-    @endif
 
     <!-- Modal Pencatatan Manual (Masuk/Izin/Sakit) -->
     <div x-show="showManualAttendanceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" x-transition>

@@ -19,8 +19,16 @@ class ReportController extends Controller
         $query = Attendance::with(['staff', 'geofenceZone']);
 
         // Default filters
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $selectedMonth = $request->input('month');
+        $selectedYear = $request->input('year');
+
+        if ($selectedMonth && $selectedYear) {
+            $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d');
+            $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d');
+        } else {
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+            $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        }
 
         // Apply Date Range
         $query->whereBetween('checked_at', [
@@ -98,8 +106,16 @@ class ReportController extends Controller
         $query = Attendance::with(['staff', 'geofenceZone']);
 
         // Default filters
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $selectedMonth = $request->input('month');
+        $selectedYear = $request->input('year');
+
+        if ($selectedMonth && $selectedYear) {
+            $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d');
+            $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d');
+        } else {
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+            $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        }
 
         // Apply Date Range
         $query->whereBetween('checked_at', [

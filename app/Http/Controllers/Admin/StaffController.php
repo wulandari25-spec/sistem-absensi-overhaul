@@ -97,13 +97,30 @@ class StaffController extends Controller implements HasMiddleware
             ->with('success', 'Data pegawai berhasil ditambahkan.');
     }
 
-    public function show(OutsourcingStaff $staff)
+    public function show(Request $request, OutsourcingStaff $staff)
     {
-        $staff->load(['attendances' => function ($q) {
-            $q->latest('checked_at')->limit(20);
-        }]);
+        $query = $staff->attendances()->with('geofenceZone');
 
-        return view('admin.staffs.show', compact('staff'));
+        $selectedMonth = $request->input('month');
+        $selectedYear = $request->input('year');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($selectedMonth && $selectedYear) {
+            $startDate = \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d');
+        }
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('checked_at', [
+                \Carbon\Carbon::parse($startDate)->startOfDay(),
+                \Carbon\Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+
+        $attendances = $query->latest('checked_at')->paginate(15)->withQueryString();
+
+        return view('admin.staffs.show', compact('staff', 'attendances', 'startDate', 'endDate'));
     }
 
     public function edit(OutsourcingStaff $staff)
