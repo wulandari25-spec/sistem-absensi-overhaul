@@ -16,6 +16,7 @@ class OutsourcingStaff extends Model
         'staff_code', 'name', 'institution', 'department', 'position',
         'face_descriptor', 'photo_profile', 'phone', 'id_number',
         'is_active_onsite', 'last_seen_at', 'is_registered', 'password',
+        'contract_start_date', 'contract_end_date',
     ];
 
     protected function casts(): array
@@ -25,6 +26,8 @@ class OutsourcingStaff extends Model
             'is_active_onsite' => 'boolean',
             'is_registered' => 'boolean',
             'last_seen_at' => 'datetime',
+            'contract_start_date' => 'date',
+            'contract_end_date' => 'date',
         ];
     }
 
@@ -75,5 +78,17 @@ class OutsourcingStaff extends Model
             'is_active_onsite' => false,
             'last_seen_at' => now(),
         ]);
+    }
+
+    public function isWithinContract($date): bool
+    {
+        if (!$this->contract_start_date || !$this->contract_end_date) {
+            return true;
+        }
+        $checkDate = \Carbon\Carbon::parse($date)->startOfDay();
+        return $checkDate->between(
+            $this->contract_start_date->startOfDay(),
+            $this->contract_end_date->endOfDay()
+        );
     }
 }

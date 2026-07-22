@@ -68,6 +68,13 @@ class ShiftScheduleController extends Controller
             $date = Carbon::createFromDate($year, $month, $day);
 
             foreach ($staffs as $index => $staff) {
+                // Check if the date is within the employee's contract
+                if ($staff->contract_start_date && $staff->contract_end_date) {
+                    if (!$date->between($staff->contract_start_date->startOfDay(), $staff->contract_end_date->endOfDay())) {
+                        continue; // Skip if day is outside active contract
+                    }
+                }
+
                 // Generate a rotating pattern of shift assignments
                 $shiftIndex = ($index + $day) % $shifts->count();
                 $shift = $shifts[$shiftIndex];

@@ -143,6 +143,35 @@
                 </div>
 
                 <div>
+                    <label for="contract_start_date" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        Tanggal Mulai Kontrak <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="contract_start_date" 
+                        name="contract_start_date" 
+                        value="{{ old('contract_start_date', $staff->contract_start_date ? $staff->contract_start_date->format('Y-m-d') : '') }}"
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label for="contract_end_date" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        Tanggal Selesai Kontrak <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="contract_end_date" 
+                        name="contract_end_date" 
+                        value="{{ old('contract_end_date', $staff->contract_end_date ? $staff->contract_end_date->format('Y-m-d') : '') }}"
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        required
+                    >
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Masa kontrak payung minimal 20 hari, maksimal 2 tahun.</p>
+                </div>
+
+                <div>
                     <label for="password" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         Reset Kata Sandi Karyawan
                     </label>

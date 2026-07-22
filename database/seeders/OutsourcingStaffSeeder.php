@@ -43,8 +43,18 @@ class OutsourcingStaffSeeder extends Seeder
             ['staff_code' => 'OS-0030', 'name' => 'Dani Darmawan', 'institution' => 'PT. Nusa Power Services', 'department' => 'Boiler', 'position' => 'Welder Helper', 'is_active_onsite' => false, 'id_number' => '3201010101010030', 'password' => Hash::make('password'), 'last_seen_at' => now()],
         ];
 
-        foreach ($staffData as $data) {
-            OutsourcingStaff::firstOrCreate(
+        foreach ($staffData as $index => $data) {
+            // Assign varying contract periods (min 20 days)
+            $startDay = 1 + ($index % 5); // 1, 2, 3, 4, 5
+            $duration = 20 + ($index % 11); // 20 to 30 days
+            
+            $startDate = \Carbon\Carbon::create(2026, 7, $startDay)->format('Y-m-d');
+            $endDate = \Carbon\Carbon::create(2026, 7, $startDay)->addDays($duration - 1)->format('Y-m-d');
+
+            $data['contract_start_date'] = $startDate;
+            $data['contract_end_date'] = $endDate;
+
+            OutsourcingStaff::updateOrCreate(
                 ['staff_code' => $data['staff_code']],
                 $data
             );

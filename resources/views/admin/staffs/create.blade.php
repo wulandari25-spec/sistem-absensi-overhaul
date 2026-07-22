@@ -222,6 +222,25 @@
                         </div>
 
                         <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div class="d-flex flex-column w-100">
+                                    <label for="contract_start_date" class="form-label-custom">Tanggal Mulai Kontrak</label>
+                                    <input type="date" class="form-control form-control-modern" id="contract_start_date" name="contract_start_date" value="{{ old('contract_start_date') }}" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column w-100">
+                                    <label for="contract_end_date" class="form-label-custom">Tanggal Selesai Kontrak</label>
+                                    <input type="date" class="form-control form-control-modern" id="contract_end_date" name="contract_end_date" value="{{ old('contract_end_date') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-1">
+                                <div class="text-subtitle" style="font-size: 0.75rem; color: #718096;">Masa kontrak payung (outsourcing) minimal adalah 20 hari dan maksimal 2 tahun.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
                             <div class="col-md-12">
                                 <div class="d-flex flex-column w-100 font-sans">
                                     <label for="password" class="form-label-custom">Kata Sandi (Password) Karyawan</label>

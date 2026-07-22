@@ -50,6 +50,14 @@ class AttendanceService
                 ]);
             }
 
+            // Check contract date validity
+            if ($staff->contract_start_date && $staff->contract_end_date) {
+                if (!now()->between($staff->contract_start_date->startOfDay(), $staff->contract_end_date->endOfDay())) {
+                    $isFlagged = true;
+                    $flagReason = 'Presensi dilakukan di luar masa kontrak aktif (' . $staff->contract_start_date->format('d/m/Y') . ' s/d ' . $staff->contract_end_date->format('d/m/Y') . ')';
+                }
+            }
+
             if ($method === AttendanceMethod::FACE_RECOGNITION && $confidenceScore !== null && $confidenceScore < 0.6) {
                 $isFlagged = true;
                 $flagReason = "Skor kecocokan wajah rendah: {$confidenceScore}";
@@ -110,6 +118,16 @@ class AttendanceService
             }
 
             $zone = $this->geofenceService->validatePosition($lat, $lng);
+            $isFlagged = false;
+            $flagReason = null;
+
+            // Check contract date validity
+            if ($staff->contract_start_date && $staff->contract_end_date) {
+                if (!now()->between($staff->contract_start_date->startOfDay(), $staff->contract_end_date->endOfDay())) {
+                    $isFlagged = true;
+                    $flagReason = 'Presensi dilakukan di luar masa kontrak aktif (' . $staff->contract_start_date->format('d/m/Y') . ' s/d ' . $staff->contract_end_date->format('d/m/Y') . ')';
+                }
+            }
 
             $todayDate = now()->format('Y-m-d');
             $schedule = \App\Models\StaffSchedule::where('staff_id', $staffId)
@@ -127,7 +145,8 @@ class AttendanceService
                 'longitude' => $lng,
                 'proof_photo' => $proofPhoto,
                 'confidence_score' => $confidenceScore,
-                'is_flagged' => false,
+                'is_flagged' => $isFlagged,
+                'flag_reason' => $flagReason,
                 'device_info' => $deviceInfo,
                 'checked_at' => now(),
             ]);

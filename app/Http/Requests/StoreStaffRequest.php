@@ -29,6 +29,31 @@ class StoreStaffRequest extends FormRequest
 
             // Descriptor wajah hasil ekstraksi face-api.js (128 angka)
             'face_descriptor' => 'nullable|json',
+            'contract_start_date' => 'nullable|date',
+            'contract_end_date' => 'nullable|date|after_or_equal:contract_start_date',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $start = $this->input('contract_start_date');
+            $end = $this->input('contract_end_date');
+
+            if ($start && $end) {
+                $startDate = \Carbon\Carbon::parse($start);
+                $endDate = \Carbon\Carbon::parse($end);
+
+                $diffInDays = $startDate->diffInDays($endDate);
+
+                if ($diffInDays < 19) { // 19 full days difference means at least 20 calendar days
+                    $validator->errors()->add('contract_end_date', 'Masa kontrak payung (outsourcing) minimal adalah 20 hari.');
+                }
+
+                if ($diffInDays > 731) { // 2 years is max 731 days
+                    $validator->errors()->add('contract_end_date', 'Masa kontrak payung (outsourcing) maksimal adalah 2 tahun.');
+                }
+            }
+        });
     }
 }

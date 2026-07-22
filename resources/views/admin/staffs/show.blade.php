@@ -83,6 +83,33 @@
                     <p class="text-sm text-slate-700 dark:text-slate-300">{{ $staff->id_number ?? '-' }}</p>
                 </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tanggal Mulai Kontrak</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">
+                            {{ $staff->contract_start_date ? $staff->contract_start_date->translatedFormat('d F Y') : '-' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tanggal Selesai Kontrak</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">
+                            {{ $staff->contract_end_date ? $staff->contract_end_date->translatedFormat('d F Y') : '-' }}
+                        </p>
+                    </div>
+                </div>
+
+                @if($staff->contract_start_date && $staff->contract_end_date)
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Masa Kontrak Aktif</p>
+                    @php
+                        $diff = $staff->contract_start_date->diffInDays($staff->contract_end_date) + 1;
+                    @endphp
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs font-semibold border border-blue-100 dark:border-blue-900">
+                        ⏳ {{ $diff }} Hari Kerja (Outsourcing)
+                    </span>
+                </div>
+                @endif
+
                 <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status Face Data</p>
                     @if($staff->face_descriptor)

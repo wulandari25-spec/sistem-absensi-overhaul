@@ -105,12 +105,15 @@
                             {{-- Days Grid Cells --}}
                             @for($d = 1; $d <= $daysInMonth; $d++)
                                 @php
+                                    $cellDate = \Carbon\Carbon::createFromDate($year, $month, $d);
+                                    $isWithinContract = $staff->isWithinContract($cellDate);
                                     $key = $staff->id . '_' . $d;
                                     $sched = $schedules->get($key)?->first();
                                     $shift = $sched?->shift;
                                 @endphp
-                                <td class="p-1 text-center border-r border-slate-100 dark:border-slate-800/50">
-                                    @if($shift)
+                                <td class="p-1 text-center border-r border-slate-100 dark:border-slate-800/50 {{ !$isWithinContract ? 'bg-slate-100 dark:bg-slate-950/50 text-slate-400 dark:text-slate-600' : '' }}"
+                                    @if(!$isWithinContract) title="Di luar masa kontrak kerja pegawai" @endif>
+                                    @if($shift && $isWithinContract)
                                         <span 
                                             class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-{{ $shift->color }}-100 dark:bg-{{ $shift->color }}-950/40 text-{{ $shift->color }}-700 dark:text-{{ $shift->color }}-400 font-extrabold border border-{{ $shift->color }}-200 dark:border-{{ $shift->color }}-900"
                                             title="{{ $shift->name }}: {{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }}"
