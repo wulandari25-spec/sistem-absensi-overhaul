@@ -150,7 +150,7 @@
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all flex items-center justify-center">
+                <a href="{{ route('admin.reports.index', ['report_type' => $reportType]) }}" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all flex items-center justify-center">
                     Reset Filter
                 </a>
                 <button type="submit" class="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 rounded-xl text-xs font-bold text-white shadow-md shadow-brand-500/10 transition-all">
@@ -160,104 +160,191 @@
         </form>
     </div>
 
-    {{-- Main Reports Table --}}
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Waktu</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Zona Kerja</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metode</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Koordinat</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Verifikasi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                    @forelse ($attendances as $att)
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                    {{ $att->checked_at->format('H:i:s') }}
-                                </span>
-                                <span class="block text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                    {{ $att->checked_at->translatedFormat('d M Y') }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
-                                        {{ strtoupper(substr($att->staff->name ?? '?', 0, 1)) }}
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $att->staff->name ?? '-' }}</span>
-                                        <span class="block text-xs font-mono text-slate-400 dark:text-slate-500">{{ $att->staff->staff_code ?? '-' }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                {{ $att->staff->institution ?? '-' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 font-medium">
-                                {{ $att->geofenceZone->zone_name ?? 'Luar Geofence' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                <span class="inline-flex items-center gap-1">
-                                    <span>{{ $att->method->icon() }}</span>
-                                    <span class="text-xs">{{ $att->method->label() }}</span>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-{{ $att->status->color() }}-50 dark:bg-{{ $att->status->color() }}-950/30 text-{{ $att->status->color() }}-700 dark:text-{{ $att->status->color() }}-400 border border-{{ $att->status->color() }}-100 dark:border-{{ $att->status->color() }}-900">
-                                    {{ $att->status->label() }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-500 dark:text-slate-400">
-                                @if($att->latitude && $att->longitude)
-                                    <a href="https://maps.google.com/?q={{ $att->latitude }},{{ $att->longitude }}" target="_blank" class="hover:underline hover:text-brand-500 flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                        {{ number_format($att->latitude, 5) }}, {{ number_format($att->longitude, 5) }}
-                                    </a>
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                @if($att->is_flagged)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900" title="{{ $att->flag_reason }}">
-                                        ⚠️ Mencurigakan
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
-                                        ✅ Aman
-                                    </span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-12 text-center">
-                                <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
-                                <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data presensi ditemukan</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Coba sesuaikan filter atau rentang tanggal Anda.</p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        {{-- Pagination Footer --}}
-        @if ($attendances->hasPages())
-            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
-                {{ $attendances->links() }}
-            </div>
-        @endif
+    {{-- Tab Switcher --}}
+    <div class="no-print flex border-b border-slate-200 dark:border-slate-800 gap-2">
+        <a href="{{ request()->fullUrlWithQuery(['report_type' => 'log']) }}" class="px-5 py-3 text-sm font-bold border-b-2 {{ $reportType === 'log' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400' }} transition-all flex items-center gap-1.5">
+            <span>📝</span> Log Aktivitas Absensi
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['report_type' => 'daily']) }}" class="px-5 py-3 text-sm font-bold border-b-2 {{ $reportType === 'daily' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400' }} transition-all flex items-center gap-1.5">
+            <span>📅</span> Rekap Kehadiran Harian (Masuk & Pulang)
+        </a>
     </div>
 
+    @if ($reportType === 'daily')
+        {{-- Rekap Kehadiran Harian Table --}}
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jam Masuk</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jam Pulang</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durasi Kerja</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Verifikasi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                        @forelse ($dailySummary as $row)
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                        {{ \Carbon\Carbon::parse($row['date'])->translatedFormat('d M Y') }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
+                                            {{ strtoupper(substr($row['staff']->name ?? '?', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $row['staff']->name ?? '-' }}</span>
+                                            <span class="block text-xs font-mono text-slate-400 dark:text-slate-500">{{ $row['staff']->staff_code ?? '-' }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                                    {{ $row['staff']->institution ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                    {{ $row['check_in'] }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-600 dark:text-amber-400">
+                                    {{ $row['check_out'] }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                                    {{ $row['duration'] }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($row['is_flagged'])
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900">
+                                            ⚠️ Anomali
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+                                            ✅ Aman
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center">
+                                    <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data rekapitulasi harian ditemukan</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            
+            @if ($dailySummary->hasPages())
+                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+                    {{ $dailySummary->links() }}
+                </div>
+            @endif
+        </div>
+    @else
+        {{-- Main Reports Table (Log Aktivitas) --}}
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Waktu</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Zona Kerja</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metode</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Koordinat</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Verifikasi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                        @forelse ($attendances as $att)
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                        {{ $att->checked_at->format('H:i:s') }}
+                                    </span>
+                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                        {{ $att->checked_at->translatedFormat('d M Y') }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
+                                            {{ strtoupper(substr($att->staff->name ?? '?', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $att->staff->name ?? '-' }}</span>
+                                            <span class="block text-xs font-mono text-slate-400 dark:text-slate-500">{{ $att->staff->staff_code ?? '-' }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                                    {{ $att->staff->institution ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 font-medium">
+                                    {{ $att->geofenceZone->zone_name ?? 'Luar Geofence' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                                    <span class="inline-flex items-center gap-1">
+                                        <span>{{ $att->method->icon() }}</span>
+                                        <span class="text-xs">{{ $att->method->label() }}</span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-{{ $att->status->color() }}-50 dark:bg-{{ $att->status->color() }}-950/30 text-{{ $att->status->color() }}-700 dark:text-{{ $att->status->color() }}-400 border border-{{ $att->status->color() }}-100 dark:border-{{ $att->status->color() }}-900">
+                                        {{ $att->status->label() }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-500 dark:text-slate-400">
+                                    @if($att->latitude && $att->longitude)
+                                        <a href="https://maps.google.com/?q={{ $att->latitude }},{{ $att->longitude }}" target="_blank" class="hover:underline hover:text-brand-500 flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            {{ number_format($att->latitude, 5) }}, {{ number_format($att->longitude, 5) }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($att->is_flagged)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900" title="{{ $att->flag_reason }}">
+                                            ⚠️ Mencurigakan
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+                                            ✅ Aman
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="px-6 py-12 text-center">
+                                    <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data presensi ditemukan</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Coba sesuaikan filter atau rentang tanggal Anda.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            
+            @if ($attendances->hasPages())
+                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+                    {{ $attendances->links() }}
+                </div>
+            @endif
+        </div>
+    @endif
 </div>
 
 {{-- Print Styles --}}
