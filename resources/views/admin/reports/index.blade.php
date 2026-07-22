@@ -3,6 +3,19 @@
 @section('title', 'Laporan Presensi')
 @section('header', 'Laporan Kehadiran Karyawan')
 
+@push('styles')
+<style>
+    @media print {
+        .no-print,
+        .no-print-important,
+        .print\:hidden,
+        div.no-print.print\:hidden {
+            display: none !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6" x-data="{ showFilters: true }">
     
