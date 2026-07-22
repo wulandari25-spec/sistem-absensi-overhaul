@@ -15,8 +15,8 @@ class GeofenceZoneController extends Controller implements HasMiddleware
     {
         return [
             new Middleware(function ($request, $next) {
-                if ($request->user() && $request->user()->isK3() && in_array($request->route()->getActionMethod(), ['create', 'store', 'edit', 'update', 'destroy'])) {
-                    abort(403, 'Akses ditolak: Petugas K3 hanya diizinkan memantau data.');
+                if ($request->user() && !$request->user()->isAdmin() && in_array($request->route()->getActionMethod(), ['create', 'store', 'edit', 'update', 'destroy'])) {
+                    abort(403, 'Akses ditolak: Hanya Administrator yang diizinkan mengelola zona geofence.');
                 }
                 return $next($request);
             }),

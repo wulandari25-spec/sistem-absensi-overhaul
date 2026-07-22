@@ -12,7 +12,7 @@
             <h2 class="text-xl font-bold text-slate-800 dark:text-white">Pembatasan Area Kehadiran</h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Kelola zona aman GPS bagi karyawan untuk melakukan scan presensi masuk/keluar</p>
         </div>
-        @if(!auth()->user()->isK3())
+        @if(auth()->user()->isAdmin())
         <div>
             <a href="{{ route('admin.geofences.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -62,7 +62,7 @@
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan Onsite</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Deskripsi</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                        @if(!auth()->user()->isK3())
+                        @if(auth()->user()->isAdmin())
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Aksi</th>
                         @endif
                     </tr>
@@ -108,30 +108,30 @@
                                     </span>
                                 @endif
                             </td>
-                            @if(!auth()->user()->isK3())
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-xs">
-                                <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.geofences.edit', $zone) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all">
-                                        ✏️ Edit
-                                    </a>
-                                    <form action="{{ route('admin.geofences.destroy', $zone) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menghapus zona ini?')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold border border-red-500/10 hover:border-red-500/25 transition-all">
-                                            🗑️ Hapus
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                            @endif
+                            @if(auth()->user()->isAdmin())
+                             <td class="px-6 py-4 whitespace-nowrap text-right text-xs">
+                                 <div class="flex items-center justify-end gap-2">
+                                     <a href="{{ route('admin.geofences.edit', $zone) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold transition-all">
+                                         ✏️ Edit
+                                     </a>
+                                     <form action="{{ route('admin.geofences.destroy', $zone) }}" method="POST" class="inline">
+                                         @csrf
+                                         @method('DELETE')
+                                         <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menghapus zona ini?')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold border border-red-500/10 hover:border-red-500/25 transition-all">
+                                             🗑️ Hapus
+                                         </button>
+                                     </form>
+                                 </div>
+                             </td>
+                             @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-16 text-center">
-                                <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">🗺️</span></div>
-                                <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Belum ada zona geofence terdaftar</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mulai batasi area presensi dengan menekan tombol Tambah Zona Baru.</p>
-                            </td>
+                            <td colspan="{{ auth()->user()->isAdmin() ? 8 : 7 }}" class="px-6 py-16 text-center">
+                                 <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">🗺️</span></div>
+                                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Belum ada zona geofence terdaftar</p>
+                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mulai batasi area presensi dengan menekan tombol Tambah Zona Baru.</p>
+                             </td>
                         </tr>
                     @endforelse
                 </tbody>
