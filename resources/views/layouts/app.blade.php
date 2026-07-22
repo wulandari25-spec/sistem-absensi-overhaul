@@ -48,6 +48,14 @@
         .dark .log-row:hover { background: rgba(51, 141, 252, 0.1); }
         @keyframes flashNew { 0% { background: rgba(52, 211, 153, 0.2); } 100% { background: transparent; } }
         .flash-new { animation: flashNew 2s ease-out; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            aside, header { display: none !important; }
+            main { padding: 0 !important; margin: 0 !important; }
+            .lg\:ml-72, .lg\:ml-20 { margin-left: 0 !important; }
+        }
     </style>
     @stack('styles')
 </head>
