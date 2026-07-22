@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true', mobileMenuOpen: false }" :class="{ 'dark': darkMode }">
+<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true', mobileMenuOpen: false, get isCollapsed() { return this.sidebarCollapsed && window.innerWidth >= 1024 } }" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,75 +59,75 @@
         <!-- Sidebar -->
         <aside class="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 transition-all duration-300 ease-in-out lg:flex lg:flex-col"
                :class="[
-                   sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
+                   isCollapsed ? 'lg:w-20' : 'lg:w-72',
                    mobileMenuOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full lg:translate-x-0'
                ]">
             <div class="flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 py-5"
-                 :class="sidebarCollapsed ? 'flex-col justify-center px-4 gap-4' : 'px-6 justify-between gap-3'">
+                 :class="isCollapsed ? 'flex-col justify-center px-4 gap-4' : 'px-6 justify-between gap-3'">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-brand-500/25 shrink-0">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
-                    <div x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="leading-tight select-none">
+                    <div x-show="!isCollapsed" x-transition.opacity.duration.200ms class="leading-tight select-none">
                         <h1 class="text-sm font-bold gradient-text">Sistem Kehadiran</h1>
                         <h1 class="text-sm font-bold gradient-text">Karyawan Overhaul</h1>
                         <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Portal Manajemen Keamanan</p>
                     </div>
                 </div>
                 <button @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('sidebarCollapsed', sidebarCollapsed)"
-                        class="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0">
-                    <svg class="w-5 h-5 transition-transform duration-300" :class="sidebarCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        class="hidden lg:block p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0">
+                    <svg class="w-5 h-5 transition-transform duration-300" :class="isCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
             </div>
-            <nav class="flex-1 py-6 space-y-1 overflow-y-auto" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
-                <p x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="px-3 mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap">Monitoring</p>
+            <nav class="flex-1 py-6 space-y-1 overflow-y-auto" :class="isCollapsed ? 'px-2' : 'px-4'">
+                <p x-show="!isCollapsed" x-transition.opacity.duration.200ms class="px-3 mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap">Monitoring</p>
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.dashboard') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Dashboard Karyawan Overhaul</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Dashboard Karyawan Overhaul</span>
                 </a>
-                <p x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="px-3 mt-6 mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap">Manajemen</p>
+                <p x-show="!isCollapsed" x-transition.opacity.duration.200ms class="px-3 mt-6 mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap">Manajemen</p>
                 <a href="{{ route('admin.staffs.index') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.staffs.*') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Data Pegawai</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Data Pegawai</span>
                 </a>
                 <a href="{{ route('admin.profile.show') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.profile.show') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Profil Admin</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Profil Admin</span>
                 </a>
                 <a href="{{ route('admin.geofences.index') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.geofences.*') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Zona Geofence</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Zona Geofence</span>
                 </a>
                 <a href="{{ route('admin.schedules.index') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.schedules.*') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Jadwal Shift</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Jadwal Shift</span>
                 </a>
                 <a href="{{ route('admin.reports.index') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.reports.*') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                   :class="sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Laporan</span>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Laporan</span>
                 </a>
             </nav>
             <div class="py-4 border-t border-slate-200 dark:border-slate-800 transition-all duration-300"
-                 :class="sidebarCollapsed ? 'px-2' : 'px-4'">
+                 :class="isCollapsed ? 'px-2' : 'px-4'">
                 <div class="flex items-center gap-3"
-                     :class="sidebarCollapsed ? 'flex-col justify-center' : 'px-3 justify-between'">
+                     :class="isCollapsed ? 'flex-col justify-center' : 'px-3 justify-between'">
                     <a href="{{ route('admin.profile.show') }}" class="flex items-center rounded-xl transition-all"
-                       :class="sidebarCollapsed ? 'justify-center' : 'gap-3 flex-1 min-w-0 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5'" title="Buka Profil Admin">
+                       :class="isCollapsed ? 'justify-center' : 'gap-3 flex-1 min-w-0 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5'" title="Buka Profil Admin">
                         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
                             {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
                         </div>
-                        <div class="flex-1 min-w-0" x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms>
+                        <div class="flex-1 min-w-0" x-show="!isCollapsed" x-transition.opacity.duration.200ms>
                             <p class="text-sm font-semibold truncate text-slate-800 dark:text-slate-200 whitespace-nowrap">{{ auth()->user()->name ?? 'Admin' }}</p>
                             <p class="text-xs text-slate-500 dark:text-slate-400 truncate whitespace-nowrap">{{ auth()->user()->role?->label() ?? 'Administrator' }}</p>
                         </div>
                     </a>
-                    <form method="POST" action="{{ route('logout') }}" :class="sidebarCollapsed ? 'w-full flex justify-center' : ''">
+                    <form method="POST" action="{{ route('logout') }}" :class="isCollapsed ? 'w-full flex justify-center' : ''">
                         @csrf
                         <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Logout">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
