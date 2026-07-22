@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->role === UserRole::K3;
     }
 
+    public function isSecurity(): bool
+    {
+        return $this->role === UserRole::SECURITY;
+    }
+
     /**
      * Superadmin otomatis punya semua permission Spatie,
      * tanpa perlu di-assign manual satu per satu.

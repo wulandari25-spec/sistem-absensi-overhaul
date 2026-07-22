@@ -16,8 +16,14 @@ class StaffController extends Controller implements HasMiddleware
     {
         return [
             new Middleware(function ($request, $next) {
-                if ($request->user() && $request->user()->isK3() && in_array($request->route()->getActionMethod(), ['create', 'store', 'edit', 'update', 'destroy', 'import', 'storeManualAttendance'])) {
-                    abort(403, 'Akses ditolak: Petugas K3 hanya diizinkan memantau data.');
+                $user = $request->user();
+                if ($user) {
+                    if ($user->isK3() && in_array($request->route()->getActionMethod(), ['create', 'store', 'edit', 'update', 'destroy', 'import', 'storeManualAttendance'])) {
+                        abort(403, 'Akses ditolak: Petugas K3 hanya diizinkan memantau data.');
+                    }
+                    if ($user->isSecurity() && in_array($request->route()->getActionMethod(), ['create', 'store', 'edit', 'update', 'destroy', 'import'])) {
+                        abort(403, 'Akses ditolak: Petugas Keamanan hanya diizinkan memantau data dan melakukan pencatatan manual.');
+                    }
                 }
                 return $next($request);
             }),
