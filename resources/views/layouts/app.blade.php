@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' }" :class="{ 'dark': darkMode }">
+<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true', mobileMenuOpen: false }" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,9 +53,15 @@
 </head>
 <body class="font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen">
     <div class="flex min-h-screen">
+        <!-- Backdrop Overlay for Mobile -->
+        <div x-show="mobileMenuOpen" @click="mobileMenuOpen = false" x-transition.opacity class="fixed inset-0 bg-black/50 z-20 lg:hidden"></div>
+
         <!-- Sidebar -->
-        <aside class="hidden lg:flex lg:flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 transition-all duration-300 ease-in-out"
-               :class="sidebarCollapsed ? 'w-20' : 'w-72'">
+        <aside class="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 transition-all duration-300 ease-in-out lg:flex lg:flex-col"
+               :class="[
+                   sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
+                   mobileMenuOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full lg:translate-x-0'
+               ]">
             <div class="flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 py-5"
                  :class="sidebarCollapsed ? 'flex-col justify-center px-4 gap-4' : 'px-6 justify-between gap-3'">
                 <div class="flex items-center gap-3">
@@ -135,6 +141,10 @@
             <header class="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div class="flex items-center justify-between px-6 py-3">
                     <div class="flex items-center gap-4">
+                        <!-- Mobile Hamburger Button -->
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors lg:hidden" title="Buka Menu">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        </button>
                         <h2 class="text-lg font-semibold">@yield('header', 'Dashboard')</h2>
                         <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-live"></span>
