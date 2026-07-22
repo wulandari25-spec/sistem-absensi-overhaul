@@ -7,12 +7,12 @@
 <div class="max-w-7xl mx-auto space-y-6" x-data="{ showFilters: true }">
     
     {{-- Top Action Bar --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h2 class="text-xl font-bold text-slate-800 dark:text-white">Rekapitulasi Kehadiran</h2>
             <p class="no-print text-xs text-slate-500 dark:text-slate-400 mt-1">Pantau, filter, dan unduh laporan aktivitas presensi karyawan overhaul</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <button @click="showFilters = !showFilters" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                 <span x-text="showFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'"></span>
@@ -29,7 +29,7 @@
     </div>
 
     {{-- Stats Cards Group --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
             <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Absensi</p>
             <p class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2">{{ $stats['total'] }}</p>
@@ -55,7 +55,8 @@
     {{-- Filter Panel --}}
     <div x-show="showFilters" class="no-print bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
         <form method="GET" action="{{ route('admin.reports.index') }}" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <input type="hidden" name="report_type" value="{{ $reportType }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {{-- Filter Bulan --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Bulan (Filter Cepat)</label>
