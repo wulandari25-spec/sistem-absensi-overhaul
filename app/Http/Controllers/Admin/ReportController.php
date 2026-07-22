@@ -102,9 +102,20 @@ class ReportController extends Controller
                 $checkOut = $items->where('status', \App\Enums\AttendanceStatus::CHECK_OUT)->last();
 
                 $duration = '-';
+                $overtime = '-';
                 if ($checkIn && $checkOut) {
                     $diff = $checkIn->checked_at->diff($checkOut->checked_at);
                     $duration = $diff->format('%h Jam %i Menit');
+                    
+                    $totalHours = $diff->h + ($diff->days * 24);
+                    $totalMinutes = $diff->i;
+                    
+                    if ($totalHours >= 8) {
+                        $overtimeHours = $totalHours - 8;
+                        if ($overtimeHours > 0 || $totalMinutes > 0) {
+                            $overtime = $overtimeHours . ' Jam ' . $totalMinutes . ' Menit';
+                        }
+                    }
                 }
 
                 return [
@@ -114,6 +125,7 @@ class ReportController extends Controller
                     'check_in' => $checkIn ? $checkIn->checked_at->format('H:i:s') : '-',
                     'check_out' => $checkOut ? $checkOut->checked_at->format('H:i:s') : '-',
                     'duration' => $duration,
+                    'overtime' => $overtime,
                     'is_flagged' => $items->contains('is_flagged', true),
                 ];
             })->sortByDesc('date');
@@ -221,7 +233,7 @@ class ReportController extends Controller
                 "Expires"             => "0"
             ];
 
-            $columns = ['Tanggal', 'Kode Staf', 'Nama Karyawan', 'Vendor (Instansi)', 'Jam Masuk', 'Jam Pulang', 'Durasi Kerja', 'Status Anomali'];
+            $columns = ['Tanggal', 'Kode Staf', 'Nama Karyawan', 'Vendor (Instansi)', 'Jam Masuk', 'Jam Pulang', 'Durasi Kerja', 'Lembur', 'Status Anomali'];
 
             $grouped = $records->sortBy('checked_at')->groupBy(function ($item) {
                 return $item->staff_id . '_' . $item->checked_at->format('Y-m-d');
@@ -238,9 +250,20 @@ class ReportController extends Controller
                     $checkOut = $items->where('status', \App\Enums\AttendanceStatus::CHECK_OUT)->last();
 
                     $duration = '-';
+                    $overtime = '-';
                     if ($checkIn && $checkOut) {
                         $diff = $checkIn->checked_at->diff($checkOut->checked_at);
                         $duration = $diff->format('%h Jam %i Menit');
+                        
+                        $totalHours = $diff->h + ($diff->days * 24);
+                        $totalMinutes = $diff->i;
+                        
+                        if ($totalHours >= 8) {
+                            $overtimeHours = $totalHours - 8;
+                            if ($overtimeHours > 0 || $totalMinutes > 0) {
+                                $overtime = $overtimeHours . ' Jam ' . $totalMinutes . ' Menit';
+                            }
+                        }
                     }
 
                     $hasFlag = $items->contains('is_flagged', true);
@@ -253,6 +276,7 @@ class ReportController extends Controller
                         $checkIn ? $checkIn->checked_at->format('H:i:s') : '-',
                         $checkOut ? $checkOut->checked_at->format('H:i:s') : '-',
                         $duration,
+                        $overtime,
                         $hasFlag ? 'Mencurigakan' : 'Aman'
                     ], ';');
                 }
