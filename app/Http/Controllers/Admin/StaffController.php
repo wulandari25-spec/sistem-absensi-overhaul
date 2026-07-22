@@ -295,7 +295,7 @@ class StaffController extends Controller implements HasMiddleware
             "Expires"             => "0"
         ];
 
-        $columns = ['staff_code', 'name', 'institution', 'department', 'position', 'phone', 'id_number', 'email', 'password'];
+        $columns = ['staff_code', 'name', 'institution', 'department', 'position', 'phone', 'id_number', 'email', 'password', 'contract_start_date', 'contract_end_date'];
 
         $callback = function() use($columns) {
             $file = fopen('php://output', 'w');
@@ -303,7 +303,7 @@ class StaffController extends Controller implements HasMiddleware
             fputcsv($file, $columns, ';');
             
             // Contoh baris
-            fputcsv($file, ['OS-0001', 'Ahmad Fauzi', 'PT. Rekayasa Industri', 'Mekanik Turbin', 'Teknisi Senior', '081234567890', '320101xxxxxxxxxx', 'ahmad@example.com', 'password123'], ';');
+            fputcsv($file, ['OS-0001', 'Ahmad Fauzi', 'PT. Rekayasa Industri', 'Mekanik Turbin', 'Teknisi Senior', '081234567890', '320101xxxxxxxxxx', 'ahmad@example.com', 'password123', '2026-07-01', '2026-07-20'], ';');
             fclose($file);
         };
 
