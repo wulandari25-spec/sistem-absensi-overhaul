@@ -94,18 +94,6 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            {{-- Print Selection Mode Selector --}}
-            <div class="no-print inline-flex items-center gap-2 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold shadow-sm transition-all h-[42px]">
-                <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px] whitespace-nowrap">Cakupan Cetak:</span>
-                <select x-model="printMode" class="bg-transparent text-slate-800 dark:text-slate-200 font-bold border-none outline-none cursor-pointer focus:ring-0 text-xs py-0 pl-1 pr-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    <option value="all" class="bg-white dark:bg-slate-900">Semua Baris</option>
-                    <option value="selected" class="bg-white dark:bg-slate-900">Hanya Baris Terpilih</option>
-                </select>
-                <template x-if="printMode === 'selected'">
-                    <span class="text-[10px] font-extrabold text-brand-500 px-2 py-0.5 bg-brand-50 dark:bg-brand-950/40 rounded-lg whitespace-nowrap" x-text="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' terpilih'"></span>
-                </template>
-            </div>
-
             <button @click="showFilters = !showFilters" class="inline-flex items-center gap-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all h-[42px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                 <span x-text="showFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'"></span>
@@ -115,12 +103,15 @@
                 Ekspor Excel
             </a>
             <button @click="
-                if (printMode === 'all') {
+                const selectedCount = reportType === 'daily' ? selectedDaily.length : selectedLogs.length;
+                if (selectedCount > 0) {
+                    printMode = 'selected';
+                    $nextTick(() => { window.print(); });
+                } else {
+                    printMode = 'all';
                     const params = new URLSearchParams(window.location.search);
                     params.set('print', 'all');
                     window.open('{{ route('admin.reports.index') }}?' + params.toString(), '_blank');
-                } else {
-                    window.print();
                 }
             " class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
