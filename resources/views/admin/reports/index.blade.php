@@ -450,6 +450,7 @@
 </div>
 
 {{-- Print Styles --}}
+@if(request()->has('print'))
 @push('styles')
 <style media="print">
     @media print {
@@ -523,7 +524,7 @@
         a { text-decoration: none !important; color: #000 !important; }
     }
 </style>
-@if(request()->has('print'))
+@endpush
 @push('scripts')
 <script>
     window.addEventListener('DOMContentLoaded', () => {

@@ -153,7 +153,7 @@
             </div>
         </aside>
         <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out print:ml-0"
-             :class="sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
+             :class="isCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
             <header class="print:hidden sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div class="flex items-center justify-between px-6 py-3">
                     <div class="flex items-center gap-4">
