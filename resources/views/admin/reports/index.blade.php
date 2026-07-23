@@ -458,7 +458,7 @@
                        :class="tempPrintMode === 'all' ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'">
                     <input type="radio" name="print_scope" value="all" x-model="tempPrintMode" class="mt-1 text-brand-500 focus:ring-brand-500/20 border-slate-300 dark:border-slate-700">
                     <div>
-                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Semua Data Kehadiran ({{ $stats['total'] }} data pegawai)</span>
+                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Semua Data Kehadiran ({{ $stats['total'] }} total absensi)</span>
                         <span class="block text-xs text-slate-400 dark:text-slate-500 mt-1">Cetak seluruh data absensi (atau seluruh data terfilter) secara lengkap tanpa batasan halaman.</span>
                     </div>
                 </label>
