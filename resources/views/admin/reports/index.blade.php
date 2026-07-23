@@ -89,18 +89,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Ekspor Excel
             </a>
-            <button @click="
-                const selectedCount = reportType === 'daily' ? selectedDaily.length : selectedLogs.length;
-                if (selectedCount > 0) {
-                    printMode = 'selected';
-                    $nextTick(() => { window.print(); });
-                } else {
-                    printMode = 'all';
-                    const params = new URLSearchParams(window.location.search);
-                    params.set('print', 'all');
-                    window.open('{{ route('admin.reports.index') }}?' + params.toString(), '_blank');
-                }
-            " class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
+            <button @click="showPrintModal = true; tempPrintMode = (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) > 0 ? 'selected' : 'all'" class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 Cetak Laporan
             </button>
@@ -447,6 +436,73 @@
             @endif
         </div>
     @endif
+    {{-- Print Scope Selection Modal --}}
+    <div x-show="showPrintModal" class="no-print fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-transition.opacity x-cloak>
+        <div @click.away="showPrintModal = false" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-xl animate-fade-in-up" x-transition.scale>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    🖨️ Cakupan Cetak Laporan
+                </h3>
+                <button @click="showPrintModal = false" class="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
+                Silakan tentukan cakupan baris absensi yang ingin dicetak ke dalam laporan.
+            </p>
+
+            <div class="space-y-3">
+                {{-- Option 1: Print All --}}
+                <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all"
+                       :class="tempPrintMode === 'all' ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'">
+                    <input type="radio" name="print_scope" value="all" x-model="tempPrintMode" class="mt-1 text-brand-500 focus:ring-brand-500/20 border-slate-300 dark:border-slate-700">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Semua Baris Kehadiran</span>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-1">Cetak seluruh data (atau seluruh data terfilter) secara lengkap tanpa batasan halaman.</span>
+                    </div>
+                </label>
+
+                {{-- Option 2: Print Selected --}}
+                <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all"
+                       :class="[
+                           (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0 ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800' : 
+                           (tempPrintMode === 'selected' ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40')
+                       ]">
+                    <input type="radio" name="print_scope" value="selected" x-model="tempPrintMode"
+                           :disabled="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0"
+                           class="mt-1 text-brand-500 focus:ring-brand-500/20 border-slate-300 dark:border-slate-700 disabled:opacity-50">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Hanya Baris Terpilih</span>
+                            <span class="text-[10px] font-extrabold text-brand-600 px-2 py-0.5 bg-brand-50 dark:bg-brand-950/40 rounded-lg"
+                                  x-text="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' terpilih'"></span>
+                        </div>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-1">Hanya mencetak data yang Anda centang pada tabel di halaman aktif saat ini.</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button @click="showPrintModal = false" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all">
+                    Batal
+                </button>
+                <button @click="
+                    showPrintModal = false;
+                    printMode = tempPrintMode;
+                    if (printMode === 'all') {
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('print', 'all');
+                        window.open('{{ route('admin.reports.index') }}?' + params.toString(), '_blank');
+                    } else {
+                        $nextTick(() => { window.print(); });
+                    }
+                " class="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 rounded-xl text-xs font-bold text-white shadow-md shadow-brand-500/10 transition-all">
+                    Mulai Cetak
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Print Styles --}}
