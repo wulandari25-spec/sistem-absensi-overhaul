@@ -4,19 +4,6 @@
 @section('header', 'Laporan Kehadiran Karyawan')
 
 @push('styles')
-<style media="print">
-    .no-print,
-    .no-print-important,
-    [class*="print:hidden"] {
-        display: none !important;
-    }
-    .checkbox-col {
-        display: none !important;
-    }
-    .row-unselected {
-        display: none !important;
-    }
-</style>
 <style>
     .row-unselected {
         opacity: 0.35;
@@ -270,7 +257,7 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                            <th class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                            <th class="print:hidden px-4 py-4 w-12 text-center">
                                 <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllDaily($event.target.checked)">
                             </th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tanggal</th>
@@ -285,8 +272,8 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                         @forelse ($dailySummary as $row)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}) }">
-                                <td class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}), 'print:hidden': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}) }">
+                                <td class="print:hidden px-4 py-4 w-12 text-center">
                                     <input type="checkbox" class="daily-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedDaily.includes({{ $loop->index }})" @change="updateDailySelection({{ $loop->index }}, $event.target.checked)">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -363,7 +350,7 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                            <th class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                            <th class="print:hidden px-4 py-4 w-12 text-center">
                                 <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllLogs($event.target.checked)">
                             </th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Waktu</th>
@@ -378,8 +365,8 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                         @forelse ($attendances as $att)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}) }">
-                                <td class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}), 'print:hidden': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}) }">
+                                <td class="print:hidden px-4 py-4 w-12 text-center">
                                     <input type="checkbox" class="log-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedLogs.includes({{ $loop->index }})" @change="updateLogSelection({{ $loop->index }}, $event.target.checked)">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
