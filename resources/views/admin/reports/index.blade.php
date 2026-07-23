@@ -12,12 +12,65 @@
         div.no-print.print\:hidden {
             display: none !important;
         }
+        .checkbox-col {
+            display: none !important;
+        }
+        .row-unselected {
+            display: none !important;
+        }
+    }
+    
+    .row-unselected {
+        opacity: 0.35;
+        background-color: rgba(241, 245, 249, 0.4) !important;
+    }
+    .dark .row-unselected {
+        opacity: 0.25;
+        background-color: rgba(30, 41, 59, 0.2) !important;
     }
 </style>
 @endpush
 
 @section('content')
-<div class="max-w-7xl mx-auto space-y-6" x-data="{ showFilters: true }">
+<div class="max-w-7xl mx-auto space-y-6" x-data="{ 
+    showFilters: true,
+    reportType: '{{ $reportType }}',
+    printMode: 'all',
+    selectedLogs: [],
+    selectedDaily: [],
+    toggleAllLogs(checked) {
+        this.selectedLogs = [];
+        if (checked) {
+            const checkboxes = document.querySelectorAll('.log-row-checkbox');
+            checkboxes.forEach((cb, idx) => {
+                this.selectedLogs.push(idx);
+            });
+        }
+    },
+    toggleAllDaily(checked) {
+        this.selectedDaily = [];
+        if (checked) {
+            const checkboxes = document.querySelectorAll('.daily-row-checkbox');
+            checkboxes.forEach((cb, idx) => {
+                this.selectedDaily.push(idx);
+            });
+        }
+    },
+    updateLogSelection(idx, checked) {
+        if (checked) {
+            if (!this.selectedLogs.includes(idx)) this.selectedLogs.push(idx);
+        } else {
+            this.selectedLogs = this.selectedLogs.filter(i => i !== idx);
+        }
+    },
+    updateDailySelection(idx, checked) {
+        if (checked) {
+            if (!this.selectedDaily.includes(idx)) this.selectedDaily.push(idx);
+        } else {
+            this.selectedDaily = this.selectedDaily.filter(i => i !== idx);
+        }
+    }
+}">
     
     {{-- Top Action Bar --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -33,6 +86,7 @@
                     @else
                         Log Aktivitas Absensi
                     @endif
+                    <span class="text-xs font-medium text-slate-500" :class="printMode === 'selected' ? '' : 'hidden'"> (Baris Terpilih)</span>
                 </p>
                 <p class="text-xs text-slate-500 mt-0.5">
                     Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
@@ -40,6 +94,18 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
+            {{-- Print Selection Mode Selector --}}
+            <div class="no-print inline-flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold shadow-sm transition-all">
+                <span class="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider">Cakupan Cetak:</span>
+                <select x-model="printMode" class="bg-transparent text-slate-800 dark:text-slate-200 font-bold border-none outline-none cursor-pointer focus:ring-0 text-xs py-1.5 pl-1 pr-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <option value="all" class="bg-white dark:bg-slate-900">Semua Baris</option>
+                    <option value="selected" class="bg-white dark:bg-slate-900">Hanya Baris Terpilih</option>
+                </select>
+                <template x-if="printMode === 'selected'">
+                    <span class="text-[10px] font-bold text-brand-500 px-2 py-0.5 bg-brand-50 dark:bg-brand-950/40 rounded-lg" x-text="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' terpilih'"></span>
+                </template>
+            </div>
+            
             <button @click="showFilters = !showFilters" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                 <span x-text="showFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'"></span>
@@ -205,6 +271,9 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                                <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllDaily($event.target.checked)">
+                            </th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tanggal</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
@@ -217,7 +286,10 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                         @forelse ($dailySummary as $row)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}) }">
+                                <td class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                                    <input type="checkbox" class="daily-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedDaily.includes({{ $loop->index }})" @change="updateDailySelection({{ $loop->index }}, $event.target.checked)">
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                         {{ \Carbon\Carbon::parse($row['date'])->translatedFormat('d M Y') }}
@@ -269,7 +341,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-12 text-center">
+                                <td colspan="9" class="px-6 py-12 text-center">
                                     <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
                                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data rekapitulasi harian ditemukan</p>
                                 </td>
@@ -292,6 +364,9 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                                <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllLogs($event.target.checked)">
+                            </th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Waktu</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
@@ -304,7 +379,10 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                         @forelse ($attendances as $att)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}) }">
+                                <td class="no-print checkbox-col px-4 py-4 w-12 text-center">
+                                    <input type="checkbox" class="log-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedLogs.includes({{ $loop->index }})" @change="updateLogSelection({{ $loop->index }}, $event.target.checked)">
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                         {{ $att->checked_at->format('H:i:s') }}
@@ -365,7 +443,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-12 text-center">
+                                <td colspan="9" class="px-6 py-12 text-center">
                                     <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
                                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data presensi ditemukan</p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Coba sesuaikan filter atau rentang tanggal Anda.</p>
