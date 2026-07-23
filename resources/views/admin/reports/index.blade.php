@@ -8,8 +8,7 @@
     @media print {
         .no-print,
         .no-print-important,
-        .print\:hidden,
-        div.no-print.print\:hidden {
+        [class*="print:hidden"] {
             display: none !important;
         }
         .checkbox-col {
@@ -516,7 +515,8 @@
         aside, header, button, form, nav, .top-action-bar, .no-print { display: none !important; }
         
         /* Maksimalkan lebar cetak */
-        .max-w-7xl, .lg\:ml-72, .flex-1 { max-w: 100% !important; margin: 0 !important; padding: 0 !important; }
+        .max-w-7xl { max-w: 100% !important; }
+        [class*="lg:ml-"] { margin-left: 0 !important; }
         main { padding: 0 !important; }
         
         /* Sembunyikan kartu statistik atas saat cetak agar murni tabel */

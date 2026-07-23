@@ -54,7 +54,7 @@
             body { background: white !important; color: black !important; }
             aside, header { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; }
-            .lg\:ml-72, .lg\:ml-20 { margin-left: 0 !important; }
+            [class*="lg:ml-"] { margin-left: 0 !important; }
         }
     </style>
     @stack('styles')
