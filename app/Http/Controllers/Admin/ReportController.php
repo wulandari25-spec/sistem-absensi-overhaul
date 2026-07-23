@@ -131,7 +131,7 @@ class ReportController extends Controller
             })->sortByDesc('date');
 
             $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
-            $perPage = 15;
+            $perPage = $request->has('print') ? 1000000 : 15;
             $currentItems = $dailySummaryCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
             $dailySummary = new \Illuminate\Pagination\LengthAwarePaginator(
                 $currentItems,
@@ -143,7 +143,11 @@ class ReportController extends Controller
             $dailySummary->withQueryString();
         } else {
             // Paginate records
-            $attendances = $query->latest('checked_at')->paginate(15)->withQueryString();
+            if ($request->has('print')) {
+                $attendances = $query->latest('checked_at')->paginate(1000000)->withQueryString();
+            } else {
+                $attendances = $query->latest('checked_at')->paginate(15)->withQueryString();
+            }
         }
 
         // Get filter options

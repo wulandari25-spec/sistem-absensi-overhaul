@@ -489,7 +489,17 @@
                 <button @click="showPrintModal = false" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-all">
                     Batal
                 </button>
-                <button @click="printMode = tempPrintMode; showPrintModal = false; $nextTick(() => { window.print() })" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-md shadow-brand-500/10 active:scale-95 transition-all">
+                <button @click="
+                    printMode = tempPrintMode;
+                    showPrintModal = false;
+                    if (tempPrintMode === 'all') {
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('print', 'all');
+                        window.open('{{ route('admin.reports.index') }}?' + params.toString(), '_blank');
+                    } else {
+                        $nextTick(() => { window.print() });
+                    }
+                " class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-md shadow-brand-500/10 active:scale-95 transition-all">
                     Cetak Sekarang
                 </button>
             </div>
@@ -570,5 +580,19 @@
         a { text-decoration: none !important; color: #000 !important; }
     }
 </style>
+@if(request()->has('print'))
+@push('scripts')
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.print();
+            window.addEventListener('afterprint', () => {
+                window.close();
+            });
+        }, 1000);
+    });
+</script>
 @endpush
+@endif
+
 @endsection
