@@ -4,21 +4,20 @@
 @section('header', 'Laporan Kehadiran Karyawan')
 
 @push('styles')
-<style>
-    @media print {
-        .no-print,
-        .no-print-important,
-        [class*="print:hidden"] {
-            display: none !important;
-        }
-        .checkbox-col {
-            display: none !important;
-        }
-        .row-unselected {
-            display: none !important;
-        }
+<style media="print">
+    .no-print,
+    .no-print-important,
+    [class*="print:hidden"] {
+        display: none !important;
     }
-    
+    .checkbox-col {
+        display: none !important;
+    }
+    .row-unselected {
+        display: none !important;
+    }
+</style>
+<style>
     .row-unselected {
         opacity: 0.35;
         background-color: rgba(241, 245, 249, 0.4) !important;
@@ -474,77 +473,75 @@
 
 {{-- Print Styles --}}
 @push('styles')
-<style>
-    @media print {
-        /* Reset tubuh halaman */
-        body { background: #fff !important; color: #000 !important; font-family: Arial, sans-serif !important; }
-        aside, header, button, form, nav, .top-action-bar, .no-print { display: none !important; }
-        
-        /* Maksimalkan lebar cetak */
-        .max-w-7xl { max-w: 100% !important; }
-        [class*="lg:ml-"] { margin-left: 0 !important; }
-        main { padding: 0 !important; }
-        
-        /* Sembunyikan kartu statistik atas saat cetak agar murni tabel */
-        .grid { display: none !important; }
-        
-        /* Hilangkan bayangan & border melengkung modern */
-        .rounded-3xl, .shadow-sm, .rounded-full, .rounded-xl, .rounded-lg { border-radius: 0 !important; box-shadow: none !important; }
-        
-        /* Atur tabel mirip cetakan Excel */
-        table { 
-            width: 100% !important; 
-            border-collapse: collapse !important; 
-            margin-top: 15px !important; 
-            background: #fff !important;
-            table-layout: auto !important;
-        }
-        
-        th, td { 
-            border: 1px solid #000 !important; 
-            padding: 4px 6px !important; 
-            font-size: 9px !important; 
-            color: #000 !important;
-            background: #fff !important;
-            text-align: left !important;
-            white-space: normal !important;
-            word-break: break-word !important;
-        }
-        
-        th { 
-            background-color: #f2f2f2 !important; 
-            font-weight: bold !important;
-            text-transform: uppercase !important;
-        }
-        
-        /* Hilangkan avatar inisial bulat & icon Maps/Metode */
-        table .w-8.h-8, svg, .animate-pulse { display: none !important; }
-        
-        /* Buat semua badge status & metode menjadi teks biasa (hilangkan latar pill hijau/merah) */
-        .inline-flex, 
-        span[class*="bg-"], 
-        span[class*="text-"], 
-        td span {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #000 !important;
-            font-weight: normal !important;
-            font-size: 11px !important;
-        }
-        
-        .font-bold, .font-semibold, td span.font-bold, td span.font-semibold {
-            font-weight: bold !important;
-            color: #000 !important;
-        }
-        
-        /* Sederhanakan kontainer nama & kode */
-        .flex { display: block !important; }
-        .items-center { align-items: stretch !important; }
-        .gap-3 { gap: 0 !important; }
-        a { text-decoration: none !important; color: #000 !important; }
+<style media="print">
+    /* Reset tubuh halaman */
+    body { background: #fff !important; color: #000 !important; font-family: Arial, sans-serif !important; }
+    aside, header, button, form, nav, .top-action-bar, .no-print { display: none !important; }
+    
+    /* Maksimalkan lebar cetak */
+    .max-w-7xl { max-w: 100% !important; }
+    [class*="lg:ml-"] { margin-left: 0 !important; }
+    main { padding: 0 !important; }
+    
+    /* Sembunyikan kartu statistik atas saat cetak agar murni tabel */
+    .grid { display: none !important; }
+    
+    /* Hilangkan bayangan & border melengkung modern */
+    .rounded-3xl, .shadow-sm, .rounded-full, .rounded-xl, .rounded-lg { border-radius: 0 !important; box-shadow: none !important; }
+    
+    /* Atur tabel mirip cetakan Excel */
+    table { 
+        width: 100% !important; 
+        border-collapse: collapse !important; 
+        margin-top: 15px !important; 
+        background: #fff !important;
+        table-layout: auto !important;
     }
+    
+    th, td { 
+        border: 1px solid #000 !important; 
+        padding: 4px 6px !important; 
+        font-size: 9px !important; 
+        color: #000 !important;
+        background: #fff !important;
+        text-align: left !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    
+    th { 
+        background-color: #f2f2f2 !important; 
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+    }
+    
+    /* Hilangkan avatar inisial bulat & icon Maps/Metode */
+    table .w-8.h-8, svg, .animate-pulse { display: none !important; }
+    
+    /* Buat semua badge status & metode menjadi teks biasa (hilangkan latar pill hijau/merah) */
+    .inline-flex, 
+    span[class*="bg-"], 
+    span[class*="text-"], 
+    td span {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: #000 !important;
+        font-weight: normal !important;
+        font-size: 11px !important;
+    }
+    
+    .font-bold, .font-semibold, td span.font-bold, td span.font-semibold {
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+    
+    /* Sederhanakan kontainer nama & kode */
+    .flex { display: block !important; }
+    .items-center { align-items: stretch !important; }
+    .gap-3 { gap: 0 !important; }
+    a { text-decoration: none !important; color: #000 !important; }
 </style>
 @if(request()->has('print'))
 @push('scripts')
