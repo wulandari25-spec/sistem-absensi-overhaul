@@ -36,6 +36,8 @@
     showFilters: true,
     reportType: '{{ $reportType }}',
     printMode: 'all',
+    tempPrintMode: 'all',
+    showPrintModal: false,
     selectedLogs: [],
     selectedDaily: [],
     toggleAllLogs(checked) {
@@ -94,18 +96,6 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            {{-- Print Selection Mode Selector --}}
-            <div class="no-print inline-flex items-center gap-2 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold shadow-sm transition-all h-[42px]">
-                <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px] whitespace-nowrap">Cakupan Cetak:</span>
-                <select x-model="printMode" class="bg-transparent text-slate-800 dark:text-slate-200 font-bold border-none outline-none cursor-pointer focus:ring-0 text-xs py-0 pl-1 pr-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    <option value="all" class="bg-white dark:bg-slate-900">Semua Baris</option>
-                    <option value="selected" class="bg-white dark:bg-slate-900">Hanya Baris Terpilih</option>
-                </select>
-                <template x-if="printMode === 'selected'">
-                    <span class="text-[10px] font-extrabold text-brand-500 px-2 py-0.5 bg-brand-50 dark:bg-brand-950/40 rounded-lg whitespace-nowrap" x-text="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' terpilih'"></span>
-                </template>
-            </div>
-            
             <button @click="showFilters = !showFilters" class="inline-flex items-center gap-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all h-[42px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                 <span x-text="showFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'"></span>
@@ -114,7 +104,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Ekspor Excel
             </a>
-            <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
+            <button @click="tempPrintMode = (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) > 0 ? 'selected' : 'all'; showPrintModal = true" class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 Cetak Laporan
             </button>
@@ -461,6 +451,50 @@
             @endif
         </div>
     @endif
+
+    {{-- Print Scope Modal --}}
+    <div x-show="showPrintModal" x-cloak class="no-print fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition>
+        <div @click.away="showPrintModal = false" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-fade-in-up">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/50 text-brand-500 flex items-center justify-center text-lg font-bold">
+                    🖨️
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-850 dark:text-white">Cakupan Cetak Laporan</h3>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Pilih baris data yang ingin dicetak ke dokumen</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3 mb-6">
+                <!-- Option 1: Print All -->
+                <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors" :class="{ 'border-brand-500 dark:border-brand-500 ring-2 ring-brand-500/10': tempPrintMode === 'all' }">
+                    <input type="radio" name="temp_print_mode" value="all" x-model="tempPrintMode" class="text-brand-500 focus:ring-brand-500/20">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-800 dark:text-white">Cetak Semua Baris</span>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-0.5">Mencetak seluruh data karyawan yang tampil di tabel</span>
+                    </div>
+                </label>
+
+                <!-- Option 2: Print Selected -->
+                <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors" :class="{ 'border-brand-500 dark:border-brand-500 ring-2 ring-brand-500/10': tempPrintMode === 'selected', 'opacity-50 cursor-not-allowed': (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0 }">
+                    <input type="radio" name="temp_print_mode" value="selected" x-model="tempPrintMode" :disabled="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0" class="text-brand-500 focus:ring-brand-500/20">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-800 dark:text-white">Hanya Baris Terpilih</span>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-0.5" x-text="'Mencetak ' + (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' baris yang Anda centang saja'"></span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="flex gap-2.5">
+                <button @click="showPrintModal = false" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-all">
+                    Batal
+                </button>
+                <button @click="printMode = tempPrintMode; showPrintModal = false; $nextTick(() => { window.print() })" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-md shadow-brand-500/10 active:scale-95 transition-all">
+                    Cetak Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Print Styles --}}
