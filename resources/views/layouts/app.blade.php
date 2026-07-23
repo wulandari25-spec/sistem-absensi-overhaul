@@ -49,22 +49,15 @@
         @keyframes flashNew { 0% { background: rgba(52, 211, 153, 0.2); } 100% { background: transparent; } }
         .flash-new { animation: flashNew 2s ease-out; }
     </style>
-    <style media="print">
-        .no-print { display: none !important; }
-        body { background: white !important; color: black !important; }
-        aside, header { display: none !important; }
-        main { padding: 0 !important; margin: 0 !important; }
-        [class*="lg:ml-"] { margin-left: 0 !important; }
-    </style>
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen">
     <div class="flex min-h-screen">
         <!-- Backdrop Overlay for Mobile -->
-        <div x-show="mobileMenuOpen" @click="mobileMenuOpen = false" x-transition.opacity class="fixed inset-0 bg-black/50 z-20 lg:hidden"></div>
+        <div x-show="mobileMenuOpen" @click="mobileMenuOpen = false" x-transition.opacity class="fixed inset-0 bg-black/50 z-20 lg:hidden print:hidden"></div>
 
         <!-- Sidebar -->
-        <aside class="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 transition-all duration-300 ease-in-out lg:flex lg:flex-col"
+        <aside class="print:hidden bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 transition-all duration-300 ease-in-out lg:flex lg:flex-col"
                :class="[
                    isCollapsed ? 'lg:w-20' : 'lg:w-72',
                    mobileMenuOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full lg:translate-x-0'
@@ -143,9 +136,9 @@
                 </div>
             </div>
         </aside>
-        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out"
+        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out print:ml-0"
              :class="sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
-            <header class="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+            <header class="print:hidden sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div class="flex items-center justify-between px-6 py-3">
                     <div class="flex items-center gap-4">
                         <!-- Mobile Hamburger Button -->
@@ -170,7 +163,7 @@
                     </div>
                 </div>
             </header>
-            <main class="p-6">@yield('content')</main>
+            <main class="p-6 print:p-0">@yield('content')</main>
         </div>
     </div>
     <script>

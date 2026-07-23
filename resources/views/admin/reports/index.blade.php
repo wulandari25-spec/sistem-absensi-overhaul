@@ -467,7 +467,7 @@
 <style media="print">
     /* Reset tubuh halaman */
     body { background: #fff !important; color: #000 !important; font-family: Arial, sans-serif !important; }
-    aside, header, button, form, nav, .top-action-bar, .no-print { display: none !important; }
+    button, form, nav, .top-action-bar, .no-print { display: none !important; }
     
     /* Maksimalkan lebar cetak */
     .max-w-7xl { max-w: 100% !important; }
