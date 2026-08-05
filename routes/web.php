@@ -60,6 +60,7 @@ Route::prefix('attendance')->name('attendance.')->middleware(['auth.employee'])-
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('staffs/{staff}/attendance', [StaffController::class, 'storeManualAttendance'])->name('staffs.attendance.store');
+    Route::post('staffs/{staff}/sync-biometrics', [StaffController::class, 'syncBiometrics'])->name('staffs.sync-biometrics');
     
     // Ekspor Data Evakuasi Darurat K3
     Route::get('/evacuation/export/csv', [StaffController::class, 'exportEvacuationCsv'])->name('evacuation.export.csv');

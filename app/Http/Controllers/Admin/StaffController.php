@@ -331,4 +331,20 @@ class StaffController extends Controller implements HasMiddleware
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function syncBiometrics(Request $request, OutsourcingStaff $staff)
+    {
+        $validated = $request->validate([
+            'face_descriptor' => 'required|json',
+        ]);
+
+        $staff->update([
+            'face_descriptor' => json_decode($validated['face_descriptor'], true)
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Koordinat biometrik wajah berhasil disinkronkan dari foto profil!'
+        ]);
+    }
 }

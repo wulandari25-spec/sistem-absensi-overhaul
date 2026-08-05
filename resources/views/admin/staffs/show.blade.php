@@ -121,9 +121,17 @@
                             Terdaftar
                         </span>
                     @else
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">
-                            Belum Terdaftar
-                        </span>
+                        <div class="flex items-center flex-wrap gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                                Belum Terdaftar
+                            </span>
+                            @if($staff->photo_profile)
+                                <button id="btnSyncBiometrics" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-xs font-bold transition-all border border-indigo-200 dark:border-indigo-800/60 cursor-pointer">
+                                    ⚙️ Sinkronkan Data Wajah
+                                </button>
+                            @endif
+                        </div>
+                        <div id="syncStatus" class="text-xs font-semibold text-slate-500 mt-2 hidden"></div>
                     @endif
                 </div>
             </div>
@@ -291,3 +299,138 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/face-api.min.js') }}"></script>
+<script>
+(function () {
+    const btnSync = document.getElementById('btnSyncBiometrics');
+    const syncStatus = document.getElementById('syncStatus');
+
+    if (!btnSync) return;
+
+    let faceApiLoaded = false;
+
+    async function waitForFaceApi() {
+        return new Promise((resolve, reject) => {
+            if (window.faceapi) {
+                faceApiLoaded = true;
+                return resolve();
+            }
+            let elapsed = 0;
+            const check = setInterval(() => {
+                elapsed += 100;
+                if (window.faceapi) {
+                    clearInterval(check);
+                    faceApiLoaded = true;
+                    resolve();
+                } else if (elapsed > 5000) {
+                    clearInterval(check);
+                    reject(new Error("Timeout loading face-api.js"));
+                }
+            }, 100);
+        });
+    }
+
+    async function loadModels() {
+        try {
+            await waitForFaceApi();
+            const MODEL_URL = '/models';
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+            ]);
+        } catch (err) {
+            console.warn('Face-API initialization failed:', err);
+            faceApiLoaded = false;
+        }
+    }
+
+    const modelsReady = loadModels();
+
+    btnSync.addEventListener('click', async () => {
+        btnSync.disabled = true;
+        btnSync.textContent = '⏳ Memproses...';
+        syncStatus.classList.remove('hidden');
+        syncStatus.style.color = '#718096';
+        syncStatus.textContent = 'Memuat model biometrik wajah...';
+
+        try {
+            await modelsReady;
+
+            if (!window.faceapi || !faceApiLoaded) {
+                throw new Error("Sistem deteksi wajah offline atau gagal dimuat.");
+            }
+
+            syncStatus.textContent = 'Memuat foto profil untuk dipindai...';
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = "{{ asset('storage/' . $staff->photo_profile) }}";
+            
+            img.onload = async () => {
+                try {
+                    syncStatus.textContent = 'Memindai koordinat wajah dari foto...';
+                    const detection = await faceapi
+                        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (!detection) {
+                        throw new Error("Wajah tidak terdeteksi pada foto profil saat ini. Silakan ganti dengan foto profil yang lebih jelas via menu Edit.");
+                    }
+
+                    syncStatus.textContent = 'Menyimpan koordinat biometrik ke database...';
+                    const descriptor = Array.from(detection.descriptor);
+
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const response = await fetch("{{ route('admin.staffs.sync-biometrics', $staff) }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || ''
+                        },
+                        body: JSON.stringify({
+                            face_descriptor: JSON.stringify(descriptor)
+                        })
+                    });
+
+                    const resData = await response.json();
+                    if (resData.success) {
+                        syncStatus.style.color = '#05cd99';
+                        syncStatus.textContent = '✓ Sukses: Koordinat biometrik berhasil disinkronkan!';
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error(resData.message || 'Gagal sinkronisasi data wajah.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    syncStatus.style.color = '#f04438';
+                    syncStatus.textContent = '❌ Error: ' + err.message;
+                    btnSync.disabled = false;
+                    btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
+                }
+            };
+
+            img.onerror = () => {
+                syncStatus.style.color = '#f04438';
+                syncStatus.textContent = '❌ Error: Gagal memuat file foto profil dari server.';
+                btnSync.disabled = false;
+                btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
+            };
+
+        } catch (err) {
+            console.error(err);
+            syncStatus.style.color = '#f04438';
+            syncStatus.textContent = '❌ Error: ' + err.message;
+            btnSync.disabled = false;
+            btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
+        }
+    });
+})();
+</script>
+@endpush
