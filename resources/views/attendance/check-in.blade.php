@@ -131,7 +131,7 @@
     CDN cdnjs.cloudflare.com untuk face-api.js 0.22.2 sudah tidak tersedia (404).
     Pakai jsDelivr sebagai gantinya -- otomatis serve semua versi package npm, jauh lebih reliable.
 --}}
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script defer src="{{ asset('js/face-api.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 function attendanceApp() {
