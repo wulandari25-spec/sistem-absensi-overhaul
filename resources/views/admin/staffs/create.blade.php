@@ -160,7 +160,7 @@
                             <div class="col-md-6">
                                 <div class="d-flex flex-column w-100">
                                     <label for="staff_code" class="form-label-custom">Kode Staf / ID</label>
-                                    <input type="text" class="form-control form-control-modern" id="staff_code" name="staff_code" value="{{ old('staff_code') }}" placeholder="Misal: OS-0007" required>
+                                    <input type="text" class="form-control form-control-modern" id="staff_code" name="staff_code" value="{{ old('staff_code', $nextStaffCode ?? '') }}" placeholder="Misal: OS-0007" required>
                                 </div>
                             </div>
                         </div>

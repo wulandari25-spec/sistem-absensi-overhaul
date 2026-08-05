@@ -72,7 +72,18 @@ class StaffController extends Controller implements HasMiddleware
 
     public function create()
     {
-        return view('admin.staffs.create');
+        $lastStaff = \App\Models\OutsourcingStaff::where('staff_code', 'LIKE', 'OS-%')
+            ->orderBy('staff_code', 'desc')
+            ->first();
+
+        $nextNumber = 1;
+        if ($lastStaff && preg_match('/OS-(\d+)/i', $lastStaff->staff_code, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        }
+
+        $nextStaffCode = 'OS-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return view('admin.staffs.create', compact('nextStaffCode'));
     }
 
     public function store(StoreStaffRequest $request)
