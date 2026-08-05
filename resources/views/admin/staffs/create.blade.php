@@ -192,8 +192,8 @@
                             <div class="col-md-12">
                                 <div class="d-flex flex-column w-100">
                                     <label for="email" class="form-label-custom">Alamat Email Aktif</label>
-                                    <input type="email" class="form-control form-control-modern" id="email" name="email" value="{{ old('email') }}" placeholder="Misal: ahmad.fauzi@email.com" required>
-                                    <div class="text-subtitle mt-1" style="font-size: 0.75rem;">Digunakan untuk pengiriman kredensial awal atau link pembuatan password akun.</div>
+                                    <input type="email" class="form-control form-control-modern" id="email" name="email" value="{{ old('email') }}" placeholder="Misal: ahmad.fauzi@email.com (opsional)">
+                                    <div class="text-subtitle mt-1" style="font-size: 0.75rem;">Digunakan untuk pengiriman kredensial awal atau link pembuatan password akun (opsional).</div>
                                 </div>
                             </div>
                         </div>
@@ -462,23 +462,42 @@
         }, 'image/jpeg', 0.9);
     });
 
+    let faceApiLoaded = false;
+
     async function waitForFaceApi() {
-        return new Promise((resolve) => {
-            if (window.faceapi) return resolve();
+        return new Promise((resolve, reject) => {
+            if (window.faceapi) {
+                faceApiLoaded = true;
+                return resolve();
+            }
+            let elapsed = 0;
             const check = setInterval(() => {
-                if (window.faceapi) { clearInterval(check); resolve(); }
+                elapsed += 100;
+                if (window.faceapi) {
+                    clearInterval(check);
+                    faceApiLoaded = true;
+                    resolve();
+                } else if (elapsed > 5000) { // 5s timeout
+                    clearInterval(check);
+                    reject(new Error("Timeout loading face-api.js from CDN"));
+                }
             }, 100);
         });
     }
 
     async function loadModels() {
-        await waitForFaceApi();
-        const MODEL_URL = '/models';
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+        try {
+            await waitForFaceApi();
+            const MODEL_URL = '/models';
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+            ]);
+        } catch (err) {
+            console.warn('Face-API initialization failed:', err);
+            faceApiLoaded = false;
+        }
     }
 
     const modelsReady = loadModels();
@@ -500,6 +519,12 @@
         try {
             await modelsReady;
 
+            if (!window.faceapi || !faceApiLoaded) {
+                statusWajah.textContent = '⚠️ Sistem deteksi wajah offline. Pegawai tetap dapat disimpan (Bypass).';
+                statusWajah.style.color = '#e2a03f';
+                return;
+            }
+
             const img = await faceapi.bufferToImage(file);
             const detection = await faceapi
                 .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
@@ -507,7 +532,7 @@
                 .withFaceDescriptor();
 
             if (!detection) {
-                statusWajah.textContent = '⚠️ Wajah tidak terdeteksi di foto ini. Gunakan foto lain dengan wajah yang jelas.';
+                statusWajah.textContent = '⚠️ Wajah tidak terdeteksi di foto ini. Silakan gunakan foto lain yang lebih jelas.';
                 statusWajah.style.color = '#f04438';
                 return;
             }
@@ -517,8 +542,8 @@
             statusWajah.style.color = '#05cd99';
         } catch (err) {
             console.error(err);
-            statusWajah.textContent = 'Gagal memproses foto. Coba lagi.';
-            statusWajah.style.color = '#f04438';
+            statusWajah.textContent = '⚠️ Gagal memproses foto. Anda tetap dapat mencoba menyimpannya.';
+            statusWajah.style.color = '#e2a03f';
         } finally {
             isProcessingFace = false;
         }
@@ -531,8 +556,10 @@
             return;
         }
         if (fileInput.files.length > 0 && !faceDescriptorInput.value) {
-            e.preventDefault();
-            alert('Wajah belum terdeteksi dari foto yang diupload. Silakan gunakan foto lain dengan wajah yang jelas.');
+            const proceed = confirm('Wajah tidak terdeteksi di foto yang Anda masukkan. Apakah Anda ingin tetap menyimpan data pegawai tanpa verifikasi wajah otomatis? (Karyawan hanya bisa absen via QR Code / Manual)');
+            if (!proceed) {
+                e.preventDefault();
+            }
         }
     });
 })();
