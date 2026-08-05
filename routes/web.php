@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\GeofenceZoneController;
 use App\Http\Controllers\Admin\ShiftScheduleController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Attendance\FaceRecognitionController;
 use App\Http\Controllers\Attendance\QrCodeController;
@@ -66,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('staffs/download-template', [StaffController::class, 'downloadTemplate'])->name('staffs.download-template');
     Route::resource('staffs', StaffController::class);
     Route::resource('geofences', GeofenceZoneController::class);
+    Route::resource('users', UserController::class);
 
     // Profil admin
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
