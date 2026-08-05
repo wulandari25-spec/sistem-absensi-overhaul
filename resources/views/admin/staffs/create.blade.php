@@ -376,6 +376,11 @@
 
     // Camera Actions
     async function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Browser Anda tidak mendukung akses kamera, atau halaman dibuka dalam konteks tidak aman (gunakan URL http://localhost:8000/ sebagai ganti http://127.0.0.1:8000/, atau gunakan koneksi HTTPS).');
+            switchToUploadTab();
+            return;
+        }
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 480, height: 640, facingMode: 'user' }
@@ -383,7 +388,19 @@
             videoElement.srcObject = localStream;
         } catch (err) {
             console.error('Error accessing camera:', err);
-            alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
+            
+            let message = 'Tidak dapat mengakses kamera.';
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                message += '\n\nIzin kamera ditolak. Silakan aktifkan izin akses kamera pada ikon gembok/pengaturan situs di sebelah kiri alamat URL browser Anda.';
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                message += '\n\nPerangkat kamera tidak ditemukan pada komputer/laptop Anda.';
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                message += '\n\nKamera sedang digunakan oleh aplikasi lain (seperti Zoom, Teams, Google Meet, atau tab browser lain). Harap tutup aplikasi tersebut lalu coba lagi.';
+            } else {
+                message += '\n\nDetail error: ' + err.message;
+            }
+            
+            alert(message);
             // Switch back to upload tab
             switchToUploadTab();
         }
