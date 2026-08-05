@@ -140,6 +140,8 @@
                         accept="image/*"
                         class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer file:mr-4 file:px-4 file:py-2 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
                     >
+                    <p id="statusWajah" class="text-xs font-semibold text-slate-500 mt-2">Pilih foto wajah baru untuk memperbarui data biometrik.</p>
+                    <input type="hidden" name="face_descriptor" id="face_descriptor" value="">
                 </div>
 
                 <div>
@@ -197,6 +199,7 @@
                 </a>
                 <button 
                     type="submit" 
+                    id="btnSubmit"
                     class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 text-white text-sm font-semibold hover:from-brand-600 hover:to-indigo-700 shadow-lg shadow-brand-500/25 transition-all"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -207,3 +210,112 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+(function () {
+    const fileInput = document.getElementById('photo_profile');
+    const statusWajah = document.getElementById('statusWajah');
+    const faceDescriptorInput = document.getElementById('face_descriptor');
+    const form = document.querySelector('form');
+
+    let faceApiLoaded = false;
+    let isProcessingFace = false;
+
+    async function waitForFaceApi() {
+        return new Promise((resolve, reject) => {
+            if (window.faceapi) {
+                faceApiLoaded = true;
+                return resolve();
+            }
+            let elapsed = 0;
+            const check = setInterval(() => {
+                elapsed += 100;
+                if (window.faceapi) {
+                    clearInterval(check);
+                    faceApiLoaded = true;
+                    resolve();
+                } else if (elapsed > 5000) {
+                    clearInterval(check);
+                    reject(new Error("Timeout loading face-api.js"));
+                }
+            }, 100);
+        });
+    }
+
+    async function loadModels() {
+        try {
+            await waitForFaceApi();
+            const MODEL_URL = '/models';
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+            ]);
+        } catch (err) {
+            console.warn('Face-API initialization failed:', err);
+            faceApiLoaded = false;
+        }
+    }
+
+    const modelsReady = loadModels();
+
+    fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        faceDescriptorInput.value = '';
+        isProcessingFace = true;
+        statusWajah.textContent = 'Memproses foto...';
+        statusWajah.style.color = '';
+
+        try {
+            await modelsReady;
+
+            if (!window.faceapi || !faceApiLoaded) {
+                statusWajah.textContent = '⚠️ Sistem deteksi wajah offline. Perubahan foto tetap dapat disimpan tanpa data biometrik baru.';
+                statusWajah.style.color = '#e2a03f';
+                return;
+            }
+
+            const img = await faceapi.bufferToImage(file);
+            const detection = await faceapi
+                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                statusWajah.textContent = '⚠️ Wajah tidak terdeteksi di foto baru ini. Silakan gunakan foto lain yang lebih jelas.';
+                statusWajah.style.color = '#f04438';
+                return;
+            }
+
+            faceDescriptorInput.value = JSON.stringify(Array.from(detection.descriptor));
+            statusWajah.textContent = '✓ Wajah baru berhasil terdeteksi dan didaftarkan.';
+            statusWajah.style.color = '#05cd99';
+        } catch (err) {
+            console.error(err);
+            statusWajah.textContent = '⚠️ Gagal memproses foto baru. Anda tetap dapat mencoba menyimpannya.';
+            statusWajah.style.color = '#e2a03f';
+        } finally {
+            isProcessingFace = false;
+        }
+    });
+
+    form.addEventListener('submit', (e) => {
+        if (isProcessingFace) {
+            e.preventDefault();
+            alert('Mohon tunggu, foto baru masih diproses...');
+            return;
+        }
+        if (fileInput.files.length > 0 && !faceDescriptorInput.value) {
+            const proceed = confirm('Wajah tidak terdeteksi di foto baru yang Anda masukkan. Apakah Anda ingin tetap menyimpan data pegawai tanpa memperbarui data biometrik wajah? (Karyawan hanya bisa absen via QR Code / Manual jika data wajah kosong)');
+            if (!proceed) {
+                e.preventDefault();
+            }
+        }
+    });
+})();
+</script>
+@endpush

@@ -165,6 +165,11 @@ class StaffController extends Controller implements HasMiddleware
             unset($data['password']);
         }
 
+        // Decode face_descriptor dari JSON string menjadi array PHP
+        if ($request->filled('face_descriptor')) {
+            $data['face_descriptor'] = json_decode($request->input('face_descriptor'), true);
+        }
+
         // Lakukan update
         $staff->update($data);
 
