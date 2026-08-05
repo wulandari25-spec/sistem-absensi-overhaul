@@ -12,7 +12,7 @@ class GeofenceZone extends Model
 
     protected $fillable = [
         'zone_name', 'zone_code', 'center_lat', 'center_lng',
-        'radius_meters', 'description', 'is_active',
+        'radius_meters', 'description', 'is_active', 'coordinates',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class GeofenceZone extends Model
             'center_lng' => 'decimal:8',
             'radius_meters' => 'integer',
             'is_active' => 'boolean',
+            'coordinates' => 'array',
         ];
     }
 
@@ -37,7 +38,39 @@ class GeofenceZone extends Model
 
     public function isWithinBounds(float $lat, float $lng): bool
     {
-        return $this->calculateDistance($lat, $lng) <= $this->radius_meters;
+        $points = $this->coordinates;
+
+        // If coordinates polygon is empty, fallback to circular radius check
+        if (empty($points) || count($points) < 3) {
+            if ($this->radius_meters) {
+                return $this->calculateDistance($lat, $lng) <= $this->radius_meters;
+            }
+            return false;
+        }
+
+        $inside = false;
+        $numPoints = count($points);
+        $j = $numPoints - 1;
+
+        for ($i = 0; $i < $numPoints; $i++) {
+            $pi = $points[$i];
+            $pj = $points[$j];
+
+            $piLat = (float)($pi['lat'] ?? $pi['latitude'] ?? 0);
+            $piLng = (float)($pi['lng'] ?? $pi['longitude'] ?? 0);
+            $pjLat = (float)($pj['lat'] ?? $pj['latitude'] ?? 0);
+            $pjLng = (float)($pj['lng'] ?? $pj['longitude'] ?? 0);
+
+            if (
+                (($piLat > $lat) !== ($pjLat > $lat)) &&
+                ($lng < ($pjLng - $piLng) * ($lat - $piLat) / ($pjLat - $piLat + 0.00000001) + $piLng)
+            ) {
+                $inside = !$inside;
+            }
+            $j = $i;
+        }
+
+        return $inside;
     }
 
     public function calculateDistance(float $lat, float $lng): float

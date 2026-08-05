@@ -39,8 +39,8 @@
         <div class="lg:col-span-3 space-y-3">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm space-y-3">
                 <div class="flex justify-between items-center px-1">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pilih Lokasi Pada Peta</span>
-                    <span class="text-[10px] text-brand-500 font-semibold bg-brand-500/10 px-2 py-0.5 rounded-full">Klik peta untuk menaruh pin</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peta Gambar Poligon</span>
+                    <button type="button" id="btnResetPolygon" class="text-[10px] text-rose-500 font-bold bg-rose-500/10 px-2.5 py-1 rounded-full hover:bg-rose-500/20 transition-colors">🔄 Reset Poligon</button>
                 </div>
                 <div id="map" class="h-80 sm:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner"></div>
             </div>
@@ -63,18 +63,22 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Latitude</label>
-                        <input type="number" step="any" name="center_lat" id="center_lat" value="{{ old('center_lat') }}" placeholder="Contoh: -7.714500" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500 font-mono" required readonly>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Latitude (Tengah)</label>
+                        <input type="number" step="any" name="center_lat" id="center_lat" value="{{ old('center_lat') }}" placeholder="Otomatis dari poligon" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400 outline-none font-mono" required readonly>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Longitude</label>
-                        <input type="number" step="any" name="center_lng" id="center_lng" value="{{ old('center_lng') }}" placeholder="Contoh: 113.585000" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500 font-mono" required readonly>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Longitude (Tengah)</label>
+                        <input type="number" step="any" name="center_lng" id="center_lng" value="{{ old('center_lng') }}" placeholder="Otomatis dari poligon" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400 outline-none font-mono" required readonly>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Radius Jangkauan (Meter)</label>
-                    <input type="number" name="radius_meters" id="radius_meters" value="{{ old('radius_meters', 200) }}" min="5" max="10000" placeholder="Misal: 200" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500" required>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Batas Area Poligon</label>
+                    <div class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-600 dark:text-slate-400 flex items-center justify-between">
+                        <span>Status Gambar:</span>
+                        <span id="poly_points_count" class="font-bold text-brand-600 dark:text-brand-400">0 Titik Terpilih</span>
+                    </div>
+                    <input type="hidden" name="coordinates" id="coordinates" value="{{ old('coordinates', '[]') }}">
                 </div>
 
                 <div>
@@ -89,7 +93,7 @@
 
                 <div class="flex justify-end pt-3">
                     <button type="submit" class="w-full px-5 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all">
-                        Simpan Zona Geofence
+                        Simpan Zona Geofence Poligon
                     </button>
                 </div>
             </form>
@@ -104,7 +108,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Default location: PLTU Paiton (latitude -7.7145, longitude 113.5850)
+    // Default location: PLTU Paiton
     const defaultLat = -7.7145;
     const defaultLng = 113.5850;
     
@@ -116,66 +120,85 @@ document.addEventListener('DOMContentLoaded', () => {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    let marker = null;
-    let circle = null;
+    let polygon = null;
+    let polygonPoints = [];
+    let markers = [];
 
     // Get input elements
     const latInput = document.getElementById('center_lat');
     const lngInput = document.getElementById('center_lng');
-    const radiusInput = document.getElementById('radius_meters');
+    const coordinatesInput = document.getElementById('coordinates');
+    const polyPointsCount = document.getElementById('poly_points_count');
+    const btnReset = document.getElementById('btnResetPolygon');
 
-    function updateGeofence(lat, lng, radius) {
-        // Update inputs
-        latInput.value = lat.toFixed(6);
-        lngInput.value = lng.toFixed(6);
-
-        // Update/create Marker
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-            marker.on('dragend', function(e) {
-                const position = marker.getLatLng();
-                updateGeofence(position.lat, position.lng, parseInt(radiusInput.value) || 200);
-            });
+    function drawPolygon() {
+        if (polygon) {
+            map.removeLayer(polygon);
+            polygon = null;
         }
-
-        // Update/create Circle
-        if (circle) {
-            circle.setLatLng([lat, lng]);
-            circle.setRadius(radius);
-        } else {
-            circle = L.circle([lat, lng], {
-                color: '#3b82f6',
-                fillColor: '#3b82f6',
-                fillOpacity: 0.25,
-                radius: radius
+        if (polygonPoints.length >= 2) {
+            polygon = L.polygon(polygonPoints, {
+                color: '#4318ff',
+                fillColor: '#4318ff',
+                fillOpacity: 0.2
             }).addTo(map);
         }
-
-        // Fit map bounds to show circle
-        map.fitBounds(circle.getBounds());
     }
 
-    // Set initial dummy geofence
-    updateGeofence(defaultLat, defaultLng, parseInt(radiusInput.value) || 200);
+    function updateInputs() {
+        coordinatesInput.value = JSON.stringify(polygonPoints);
+        polyPointsCount.textContent = `${polygonPoints.length} Titik Terpilih`;
 
-    // Map click handler to move geofence
+        if (polygonPoints.length > 0) {
+            const sumLat = polygonPoints.reduce((sum, p) => sum + p.lat, 0);
+            const sumLng = polygonPoints.reduce((sum, p) => sum + p.lng, 0);
+            latInput.value = (sumLat / polygonPoints.length).toFixed(6);
+            lngInput.value = (sumLng / polygonPoints.length).toFixed(6);
+        } else {
+            latInput.value = '';
+            lngInput.value = '';
+        }
+    }
+
+    // Map click handler to add vertices
     map.on('click', (e) => {
-        const radius = parseInt(radiusInput.value) || 200;
-        updateGeofence(e.latlng.lat, e.latlng.lng, radius);
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        const index = polygonPoints.length;
+
+        // Add coordinate point
+        polygonPoints.push({ lat: lat, lng: lng });
+
+        // Add Marker
+        const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        markers.push(marker);
+
+        // Marker drag handlers
+        marker.on('drag', (event) => {
+            const pos = marker.getLatLng();
+            polygonPoints[index] = { lat: pos.lat, lng: pos.lng };
+            drawPolygon();
+            updateInputs();
+        });
+
+        drawPolygon();
+        updateInputs();
     });
 
-    // Input radius change listener
-    radiusInput.addEventListener('input', () => {
-        const radius = parseInt(radiusInput.value) || 200;
-        const lat = parseFloat(latInput.value) || defaultLat;
-        const lng = parseFloat(lngInput.value) || defaultLng;
+    // Reset button handler
+    btnReset.addEventListener('click', () => {
+        // Remove all markers
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
         
-        if (circle) {
-            circle.setRadius(radius);
-            map.fitBounds(circle.getBounds());
+        // Remove polygon
+        if (polygon) {
+            map.removeLayer(polygon);
+            polygon = null;
         }
+
+        polygonPoints = [];
+        updateInputs();
     });
 });
 </script>
