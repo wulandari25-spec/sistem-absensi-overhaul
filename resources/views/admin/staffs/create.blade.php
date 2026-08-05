@@ -259,16 +259,31 @@
 
                                     <div class="w-100 p-4 rounded-3 text-center" style="border: 2px dashed #cbd5e1; background-color: #f8fafc;">
 
-                                        <div class="bg-white shadow-sm d-flex justify-content-center align-items-center mx-auto mb-3" style="width: 90px; height: 120px; border-radius: 8px; border: 1px solid #e0e5f2; overflow: hidden;">
+                                        <div id="previewContainer" class="bg-white shadow-sm d-flex justify-content-center align-items-center mx-auto mb-3" style="width: 90px; height: 120px; border-radius: 8px; border: 1px solid #e0e5f2; overflow: hidden;">
                                             <img id="previewFoto" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                             <i id="iconCamera" class="fas fa-camera fa-2x" style="color: #a3aed1;"></i>
                                         </div>
 
-                                        <div class="d-flex justify-content-center mb-3">
+                                        <div id="cameraContainer" class="mx-auto mb-3" style="display: none; width: 180px; height: 240px; border-radius: 12px; border: 2px solid #4318ff; overflow: hidden; background-color: #000; position: relative;">
+                                            <video id="videoElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+                                            <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-gradient-to-t from-black/50 to-transparent d-flex justify-content-center" style="z-index: 10;">
+                                                <button type="button" id="btnCapture" class="btn btn-sm btn-primary-modern py-1 px-3" style="font-size: 0.75rem;">
+                                                    📷 Ambil Foto
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex flex-column align-items-center gap-2 mb-3">
+                                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                                <button type="button" id="btnToggleCamera" class="btn btn-sm btn-outline-modern py-1.5 px-3">
+                                                    <i class="fas fa-video me-1"></i> Gunakan Kamera
+                                                </button>
+                                                <span class="text-subtitle" style="font-size: 0.8rem;">atau</span>
+                                            </div>
                                             <input type="file" class="form-control form-control-modern" id="photo_profile" name="photo_profile" accept="image/*" required style="max-width: 320px;">
                                         </div>
 
-                                        <p id="statusWajah" class="text-subtitle mb-0" style="font-size: 0.8rem;">Upload foto pas wajah untuk mendaftarkan data wajah.</p>
+                                        <p id="statusWajah" class="text-subtitle mb-0" style="font-size: 0.8rem;">Upload foto atau ambil gambar menggunakan kamera untuk mendaftarkan wajah.</p>
 
                                         <p class="text-subtitle mx-auto mt-2 mb-0" style="font-size: 0.75rem; line-height: 1.6; max-width: 500px;">
                                             Upload foto pas wajah (proporsi 3x4) yang jelas. Sistem akan otomatis mendeteksi dan mendaftarkan data wajah dari foto ini untuk verifikasi Check-In.
@@ -336,7 +351,80 @@
     const btnSimpan = document.getElementById('btnSimpan');
     const formStaff = document.getElementById('formStaff');
 
+    const btnToggleCamera = document.getElementById('btnToggleCamera');
+    const btnCapture = document.getElementById('btnCapture');
+    const cameraContainer = document.getElementById('cameraContainer');
+    const previewContainer = document.getElementById('previewContainer');
+    const videoElement = document.getElementById('videoElement');
+
+    let localStream = null;
     let isProcessingFace = false;
+
+    // Camera Actions
+    async function startCamera() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 480, height: 640, facingMode: 'user' }
+            });
+            videoElement.srcObject = localStream;
+            previewContainer.style.display = 'none';
+            cameraContainer.style.display = 'block';
+            btnToggleCamera.innerHTML = '<i class="fas fa-video-slash me-1"></i> Tutup Kamera';
+            btnToggleCamera.classList.replace('btn-outline-modern', 'btn-primary-modern');
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
+        }
+    }
+
+    function stopCamera() {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        videoElement.srcObject = null;
+        cameraContainer.style.display = 'none';
+        previewContainer.style.display = 'flex';
+        btnToggleCamera.innerHTML = '<i class="fas fa-video me-1"></i> Gunakan Kamera';
+        btnToggleCamera.classList.replace('btn-primary-modern', 'btn-outline-modern');
+    }
+
+    btnToggleCamera.addEventListener('click', () => {
+        if (localStream) {
+            stopCamera();
+        } else {
+            startCamera();
+        }
+    });
+
+    btnCapture.addEventListener('click', () => {
+        if (!localStream) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 480;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+
+        // Mirror captured image to match preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+
+            const file = new File([blob], "photo_profile_captured.jpg", { type: "image/jpeg" });
+            const container = new DataTransfer();
+            container.items.add(file);
+            fileInput.files = container.files;
+
+            // Trigger change event to process face landmarks
+            fileInput.dispatchEvent(new Event('change'));
+
+            // Stop camera stream
+            stopCamera();
+        }, 'image/jpeg', 0.9);
+    });
 
     async function waitForFaceApi() {
         return new Promise((resolve) => {
