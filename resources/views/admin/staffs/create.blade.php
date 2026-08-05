@@ -258,35 +258,47 @@
                                     <label class="form-label-custom mb-3">REGISTRASI DATASET WAJAH (FACE DATA)</label>
 
                                     <div class="w-100 p-4 rounded-3 text-center" style="border: 2px dashed #cbd5e1; background-color: #f8fafc;">
+                                        
+                                        {{-- Opsi Registrasi Tabs --}}
+                                        <div class="d-flex justify-content-center gap-2 mb-4" id="regModeTabs">
+                                            <button type="button" id="tabUpload" class="btn btn-sm btn-primary-modern px-3 py-2" style="border-radius: 20px;">
+                                                📁 Opsi 1: Unggah File Foto
+                                            </button>
+                                            <button type="button" id="tabCamera" class="btn btn-sm btn-outline-modern px-3 py-2" style="border-radius: 20px;">
+                                                📷 Opsi 2: Ambil dari Kamera
+                                            </button>
+                                        </div>
 
+                                        {{-- Tab 1: Upload File --}}
+                                        <div id="uploadTabContainer" class="w-100">
+                                            <div class="d-flex justify-content-center mb-3">
+                                                <input type="file" class="form-control form-control-modern" id="photo_profile" name="photo_profile" accept="image/*" required style="max-width: 320px;">
+                                            </div>
+                                        </div>
+
+                                        {{-- Tab 2: Camera Capture --}}
+                                        <div id="cameraTabContainer" class="w-100" style="display: none;">
+                                            <div id="cameraContainer" class="mx-auto mb-3" style="width: 180px; height: 240px; border-radius: 12px; border: 2px solid #4318ff; overflow: hidden; background-color: #000; position: relative;">
+                                                <video id="videoElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+                                                <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-gradient-to-t from-black/50 to-transparent d-flex justify-content-center" style="z-index: 10;">
+                                                    <button type="button" id="btnCapture" class="btn btn-sm btn-primary-modern py-1 px-3" style="font-size: 0.75rem;">
+                                                        📸 Tangkap Gambar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="text-subtitle mb-3" style="font-size: 0.8rem;">Silakan posisikan wajah Anda tepat di tengah kamera.</div>
+                                        </div>
+
+                                        {{-- Common Preview Box --}}
                                         <div id="previewContainer" class="bg-white shadow-sm d-flex justify-content-center align-items-center mx-auto mb-3" style="width: 90px; height: 120px; border-radius: 8px; border: 1px solid #e0e5f2; overflow: hidden;">
                                             <img id="previewFoto" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                             <i id="iconCamera" class="fas fa-camera fa-2x" style="color: #a3aed1;"></i>
                                         </div>
 
-                                        <div id="cameraContainer" class="mx-auto mb-3" style="display: none; width: 180px; height: 240px; border-radius: 12px; border: 2px solid #4318ff; overflow: hidden; background-color: #000; position: relative;">
-                                            <video id="videoElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
-                                            <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-gradient-to-t from-black/50 to-transparent d-flex justify-content-center" style="z-index: 10;">
-                                                <button type="button" id="btnCapture" class="btn btn-sm btn-primary-modern py-1 px-3" style="font-size: 0.75rem;">
-                                                    📷 Ambil Foto
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-column align-items-center gap-2 mb-3">
-                                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                                <button type="button" id="btnToggleCamera" class="btn btn-sm btn-outline-modern py-1.5 px-3">
-                                                    <i class="fas fa-video me-1"></i> Gunakan Kamera
-                                                </button>
-                                                <span class="text-subtitle" style="font-size: 0.8rem;">atau</span>
-                                            </div>
-                                            <input type="file" class="form-control form-control-modern" id="photo_profile" name="photo_profile" accept="image/*" required style="max-width: 320px;">
-                                        </div>
-
-                                        <p id="statusWajah" class="text-subtitle mb-0" style="font-size: 0.8rem;">Upload foto atau ambil gambar menggunakan kamera untuk mendaftarkan wajah.</p>
+                                        <p id="statusWajah" class="text-subtitle mb-0" style="font-size: 0.8rem; font-weight: 600;">Belum ada foto yang dipilih.</p>
 
                                         <p class="text-subtitle mx-auto mt-2 mb-0" style="font-size: 0.75rem; line-height: 1.6; max-width: 500px;">
-                                            Upload foto pas wajah (proporsi 3x4) yang jelas. Sistem akan otomatis mendeteksi dan mendaftarkan data wajah dari foto ini untuk verifikasi Check-In.
+                                            Dataset wajah akan dideteksi dan diekstrak secara otomatis oleh AI untuk verifikasi Check-In biometrik.
                                         </p>
 
                                         <input type="hidden" name="face_descriptor" id="face_descriptor">
@@ -351,9 +363,11 @@
     const btnSimpan = document.getElementById('btnSimpan');
     const formStaff = document.getElementById('formStaff');
 
-    const btnToggleCamera = document.getElementById('btnToggleCamera');
+    const tabUpload = document.getElementById('tabUpload');
+    const tabCamera = document.getElementById('tabCamera');
+    const uploadTabContainer = document.getElementById('uploadTabContainer');
+    const cameraTabContainer = document.getElementById('cameraTabContainer');
     const btnCapture = document.getElementById('btnCapture');
-    const cameraContainer = document.getElementById('cameraContainer');
     const previewContainer = document.getElementById('previewContainer');
     const videoElement = document.getElementById('videoElement');
 
@@ -367,13 +381,11 @@
                 video: { width: 480, height: 640, facingMode: 'user' }
             });
             videoElement.srcObject = localStream;
-            previewContainer.style.display = 'none';
-            cameraContainer.style.display = 'block';
-            btnToggleCamera.innerHTML = '<i class="fas fa-video-slash me-1"></i> Tutup Kamera';
-            btnToggleCamera.classList.replace('btn-outline-modern', 'btn-primary-modern');
         } catch (err) {
             console.error('Error accessing camera:', err);
             alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
+            // Switch back to upload tab
+            switchToUploadTab();
         }
     }
 
@@ -383,19 +395,26 @@
             localStream = null;
         }
         videoElement.srcObject = null;
-        cameraContainer.style.display = 'none';
-        previewContainer.style.display = 'flex';
-        btnToggleCamera.innerHTML = '<i class="fas fa-video me-1"></i> Gunakan Kamera';
-        btnToggleCamera.classList.replace('btn-primary-modern', 'btn-outline-modern');
     }
 
-    btnToggleCamera.addEventListener('click', () => {
-        if (localStream) {
-            stopCamera();
-        } else {
-            startCamera();
-        }
-    });
+    function switchToUploadTab() {
+        stopCamera();
+        cameraTabContainer.style.display = 'none';
+        uploadTabContainer.style.display = 'block';
+        tabUpload.classList.replace('btn-outline-modern', 'btn-primary-modern');
+        tabCamera.classList.replace('btn-primary-modern', 'btn-outline-modern');
+    }
+
+    function switchToCameraTab() {
+        uploadTabContainer.style.display = 'none';
+        cameraTabContainer.style.display = 'block';
+        tabCamera.classList.replace('btn-outline-modern', 'btn-primary-modern');
+        tabUpload.classList.replace('btn-primary-modern', 'btn-outline-modern');
+        startCamera();
+    }
+
+    tabUpload.addEventListener('click', switchToUploadTab);
+    tabCamera.addEventListener('click', switchToCameraTab);
 
     btnCapture.addEventListener('click', () => {
         if (!localStream) return;
@@ -405,7 +424,7 @@
         canvas.height = 640;
         const ctx = canvas.getContext('2d');
 
-        // Mirror captured image to match preview
+        // Mirror captured image to match live preview
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -421,8 +440,8 @@
             // Trigger change event to process face landmarks
             fileInput.dispatchEvent(new Event('change'));
 
-            // Stop camera stream
-            stopCamera();
+            // Stop camera and switch back to upload tab to show the results
+            switchToUploadTab();
         }, 'image/jpeg', 0.9);
     });
 
