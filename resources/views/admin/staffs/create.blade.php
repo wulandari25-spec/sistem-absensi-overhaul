@@ -224,15 +224,15 @@
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3 mb-md-0">
                                 <div class="d-flex flex-column w-100">
-                                    <label for="contract_start_date" class="form-label-custom">Tanggal Mulai Kontrak</label>
-                                    <input type="date" class="form-control form-control-modern" id="contract_start_date" name="contract_start_date" value="{{ old('contract_start_date') }}" required>
+                                    <label for="contract_start_date" class="form-label-custom">Tanggal Mulai Kontrak (Opsional)</label>
+                                    <input type="date" class="form-control form-control-modern" id="contract_start_date" name="contract_start_date" value="{{ old('contract_start_date') }}">
                                 </div>
                             </div>
 
                             <div class="col-md-6">
                                 <div class="d-flex flex-column w-100">
-                                    <label for="contract_end_date" class="form-label-custom">Tanggal Selesai Kontrak</label>
-                                    <input type="date" class="form-control form-control-modern" id="contract_end_date" name="contract_end_date" value="{{ old('contract_end_date') }}" required>
+                                    <label for="contract_end_date" class="form-label-custom">Tanggal Selesai Kontrak (Opsional)</label>
+                                    <input type="date" class="form-control form-control-modern" id="contract_end_date" name="contract_end_date" value="{{ old('contract_end_date') }}">
                                 </div>
                             </div>
                             <div class="col-12 mt-1">
@@ -272,7 +272,7 @@
                                         {{-- Tab 1: Upload File --}}
                                         <div id="uploadTabContainer" class="w-100">
                                             <div class="d-flex justify-content-center mb-3">
-                                                <input type="file" class="form-control form-control-modern" id="photo_profile" name="photo_profile" accept="image/*" required style="max-width: 320px;">
+                                                <input type="file" class="form-control form-control-modern" id="photo_profile" name="photo_profile" accept="image/*" style="max-width: 320px;">
                                             </div>
                                         </div>
 
