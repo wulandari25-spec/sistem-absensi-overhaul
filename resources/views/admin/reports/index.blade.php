@@ -59,6 +59,14 @@
     }
 }">
     
+    {{-- Alert Notification --}}
+    @if(session('success'))
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm animate-fade-in-up no-print">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+    
     {{-- Top Action Bar --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -406,13 +414,43 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     @if($att->is_flagged)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900" title="{{ $att->flag_reason }}">
-                                            ⚠️ Mencurigakan
-                                        </span>
+                                        @if($att->verified_by)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800" title="Ditolak oleh {{ $att->verifier->name ?? 'Admin' }}: {{ $att->flag_reason }}">
+                                                ❌ Ditolak ({{ $att->verifier->name ?? 'Admin' }})
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900" title="{{ $att->flag_reason }}">
+                                                ⚠️ Mencurigakan
+                                            </span>
+                                            @if(auth()->user()->isAdmin())
+                                                <div class="flex items-center justify-end gap-1.5 mt-1.5 print:hidden">
+                                                    <form action="{{ route('admin.attendances.verify', $att) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        <input type="hidden" name="action" value="approve">
+                                                        <button type="submit" onclick="return confirm('Setujui presensi ini sebagai Aman?')" class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 hover:text-emerald-700 transition-colors" title="Setujui (Aman)">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.attendances.verify', $att) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        <input type="hidden" name="action" value="reject">
+                                                        <button type="submit" onclick="return confirm('Tolak presensi ini? Status akan tetap ditandai sebagai Anomali.')" class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 hover:text-rose-700 transition-colors" title="Tolak Presensi">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        @endif
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
-                                            ✅ Aman
-                                        </span>
+                                        @if($att->verified_by)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Disetujui oleh {{ $att->verifier->name ?? 'Admin' }}">
+                                                ✅ Disetujui ({{ $att->verifier->name ?? 'Admin' }})
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+                                                ✅ Aman
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>

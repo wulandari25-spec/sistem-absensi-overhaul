@@ -327,4 +327,38 @@ class ReportController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Verifikasi/Setujui atau Tolak presensi anomali.
+     */
+    public function verify(Request $request, Attendance $attendance)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Hanya administrator yang diizinkan melakukan verifikasi.');
+        }
+
+        $request->validate([
+            'action' => ['required', 'in:approve,reject'],
+        ]);
+
+        $action = $request->input('action');
+
+        if ($action === 'approve') {
+            $attendance->update([
+                'is_flagged' => false,
+                'verified_by' => auth()->id(),
+                'notes' => ($attendance->notes ? $attendance->notes . "\n" : "") . "Disetujui oleh admin " . auth()->user()->name . " pada " . now()->format('d-m-Y H:i')
+            ]);
+            $msg = 'Presensi berhasil disetujui (Aman).';
+        } else {
+            $attendance->update([
+                'is_flagged' => true,
+                'verified_by' => auth()->id(),
+                'notes' => ($attendance->notes ? $attendance->notes . "\n" : "") . "Ditolak oleh admin " . auth()->user()->name . " pada " . now()->format('d-m-Y H:i')
+            ]);
+            $msg = 'Presensi berhasil ditolak (Tetap ditandai sebagai anomali).';
+        }
+
+        return back()->with('success', $msg);
+    }
 }

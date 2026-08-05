@@ -78,6 +78,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     // Laporan presensi
     Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/attendances/{attendance}/verify', [ReportController::class, 'verify'])->name('attendances.verify');
 
     // Penjadwalan shift
     Route::get('/schedules', [ShiftScheduleController::class, 'index'])->name('schedules.index');
