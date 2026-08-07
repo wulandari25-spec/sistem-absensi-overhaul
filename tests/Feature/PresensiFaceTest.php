@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class PresensiFaceTest extends TestCase
@@ -15,6 +13,7 @@ class PresensiFaceTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // The root path redirects to attendance.check-in, which redirects to employee.login
+        $response->assertStatus(302);
     }
 }

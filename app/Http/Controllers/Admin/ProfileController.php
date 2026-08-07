@@ -86,11 +86,16 @@ class ProfileController extends Controller
         ]);
 
         // Hapus foto lama jika ada
-        if ($admin->photo && Storage::disk('public')->exists($admin->photo)) {
-            Storage::disk('public')->delete($admin->photo);
+        if ($admin->photo) {
+            if (Storage::disk('local')->exists($admin->photo)) {
+                Storage::disk('local')->delete($admin->photo);
+            }
+            if (Storage::disk('public')->exists($admin->photo)) {
+                Storage::disk('public')->delete($admin->photo);
+            }
         }
 
-        $path = $request->file('photo')->store('profile-photos', 'public');
+        $path = $request->file('photo')->store('profile-photos', 'local');
 
         $admin->update(['photo' => $path]);
 

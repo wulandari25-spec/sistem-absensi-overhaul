@@ -60,45 +60,52 @@
                     <label for="institution" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         Instansi <span class="text-red-500">*</span>
                     </label>
-                    <input 
-                        type="text" 
+                    <select 
                         id="institution" 
                         name="institution" 
-                        value="{{ old('institution', $staff->institution) }}"
-                        placeholder="Nama instansi/perusahaan"
                         class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $errors->has('institution') ? 'border-red-500' : '' }}"
+                        required
                     >
+                        <option value="" disabled>Pilih Instansi...</option>
+                        @foreach($institutions as $inst)
+                            <option value="{{ $inst->name }}" {{ old('institution', $staff->institution) == $inst->name ? 'selected' : '' }}>{{ $inst->name }}</option>
+                        @endforeach
+                    </select>
                     @error('institution')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-
+ 
                 <div>
                     <label for="department" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         Departemen
                     </label>
-                    <input 
-                        type="text" 
+                    <select 
                         id="department" 
                         name="department" 
-                        value="{{ old('department', $staff->department) }}"
-                        placeholder="Nama departemen (opsional)"
                         class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
+                        <option value="">Pilih Departemen...</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->name }}" {{ old('department', $staff->department) == $dept->name ? 'selected' : '' }}>{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
-
+ 
                 <div>
                     <label for="position" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         Posisi/Jabatan
                     </label>
-                    <input 
-                        type="text" 
+                    <select 
                         id="position" 
                         name="position" 
-                        value="{{ old('position', $staff->position) }}"
-                        placeholder="Posisi kerja (opsional)"
                         class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
+                        <option value="">Pilih Posisi/Jabatan (Opsional)...</option>
+                        @foreach($positions as $pos)
+                            <option value="{{ $pos->name }}" {{ old('position', $staff->position) == $pos->name ? 'selected' : '' }}>{{ $pos->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div>

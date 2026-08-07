@@ -108,6 +108,11 @@
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Data Pegawai</span>
                 </a>
+                <a href="{{ route('admin.master-data.index') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.master-data.*') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
+                   :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zM9 8h6M9 12h6M9 16h4"/></svg>
+                    <span x-show="!isCollapsed" x-transition.opacity.duration.200ms class="whitespace-nowrap">Kelola Master Data</span>
+                </a>
                 <a href="{{ route('admin.profile.show') }}" class="flex items-center rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.profile.show') ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
                    :class="isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>

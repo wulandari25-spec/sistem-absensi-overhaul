@@ -65,7 +65,7 @@ class StaffController extends Controller implements HasMiddleware
         }
 
         $staffs = $query->orderBy('name')->paginate(20);
-        $institutions = OutsourcingStaff::registered()->distinct()->pluck('institution');
+        $institutions = \App\Models\MasterInstitution::orderBy('name')->pluck('name');
 
         return view('admin.staffs.index', compact('staffs', 'institutions'));
     }
@@ -83,7 +83,11 @@ class StaffController extends Controller implements HasMiddleware
 
         $nextStaffCode = 'OS-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
-        return view('admin.staffs.create', compact('nextStaffCode'));
+        $institutions = \App\Models\MasterInstitution::orderBy('name')->get();
+        $departments = \App\Models\MasterDepartment::orderBy('name')->get();
+        $positions = \App\Models\MasterPosition::orderBy('name')->get();
+
+        return view('admin.staffs.create', compact('nextStaffCode', 'institutions', 'departments', 'positions'));
     }
 
     public function store(StoreStaffRequest $request)
@@ -91,7 +95,24 @@ class StaffController extends Controller implements HasMiddleware
         $data = $request->validated();
 
         if ($request->hasFile('photo_profile')) {
-            $data['photo_profile'] = $request->file('photo_profile')->store('staff-photos', 'public');
+            $data['photo_profile'] = $request->file('photo_profile')->store('staff-photos', 'local');
+        } elseif ($request->filled('photo_profile_captured')) {
+            $base64Data = $request->input('photo_profile_captured');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $typeMatches)) {
+                $fileData = substr($base64Data, strpos($base64Data, ',') + 1);
+                $ext = strtolower($typeMatches[1]);
+                if ($ext === 'jpg') {
+                    $ext = 'jpeg';
+                }
+                if (in_array($ext, ['jpeg', 'png', 'webp'])) {
+                    $decoded = base64_decode($fileData);
+                    if ($decoded !== false) {
+                        $path = 'staff-photos/' . uniqid() . '.' . $ext;
+                        \Illuminate\Support\Facades\Storage::disk('local')->put($path, $decoded);
+                        $data['photo_profile'] = $path;
+                    }
+                }
+            }
         }
 
         // Hash password jika diisi
@@ -142,7 +163,11 @@ class StaffController extends Controller implements HasMiddleware
 
     public function edit(OutsourcingStaff $staff)
     {
-        return view('admin.staffs.edit', compact('staff'));
+        $institutions = \App\Models\MasterInstitution::orderBy('name')->get();
+        $departments = \App\Models\MasterDepartment::orderBy('name')->get();
+        $positions = \App\Models\MasterPosition::orderBy('name')->get();
+
+        return view('admin.staffs.edit', compact('staff', 'institutions', 'departments', 'positions'));
     }
 
     public function update(StoreStaffRequest $request, OutsourcingStaff $staff)
@@ -152,7 +177,16 @@ class StaffController extends Controller implements HasMiddleware
 
         // Cek apakah ada file foto baru
         if ($request->hasFile('photo_profile')) {
-            $data['photo_profile'] = $request->file('photo_profile')->store('staff-photos', 'public');
+            // Hapus foto lama jika ada
+            if ($staff->photo_profile) {
+                if (\Illuminate\Support\Facades\Storage::disk('local')->exists($staff->photo_profile)) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($staff->photo_profile);
+                }
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($staff->photo_profile)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($staff->photo_profile);
+                }
+            }
+            $data['photo_profile'] = $request->file('photo_profile')->store('staff-photos', 'local');
         } else {
             // Jika tidak ada foto baru, hapus key ini agar tidak menimpa foto lama dengan null
             unset($data['photo_profile']);

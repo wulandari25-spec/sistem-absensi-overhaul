@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\GeofenceZoneController;
 use App\Http\Controllers\Admin\ShiftScheduleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\MasterDataController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Attendance\FaceRecognitionController;
 use App\Http\Controllers\Attendance\QrCodeController;
@@ -69,6 +70,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('staffs', StaffController::class);
     Route::resource('geofences', GeofenceZoneController::class);
     Route::resource('users', UserController::class);
+ 
+    // Kelola Master Data
+    Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
+    Route::post('/master-data/institutions', [MasterDataController::class, 'storeInstitution'])->name('master-data.institutions.store');
+    Route::put('/master-data/institutions/{id}', [MasterDataController::class, 'updateInstitution'])->name('master-data.institutions.update');
+    Route::delete('/master-data/institutions/{id}', [MasterDataController::class, 'destroyInstitution'])->name('master-data.institutions.destroy');
+    
+    Route::post('/master-data/departments', [MasterDataController::class, 'storeDepartment'])->name('master-data.departments.store');
+    Route::put('/master-data/departments/{id}', [MasterDataController::class, 'updateDepartment'])->name('master-data.departments.update');
+    Route::delete('/master-data/departments/{id}', [MasterDataController::class, 'destroyDepartment'])->name('master-data.departments.destroy');
+    
+    Route::post('/master-data/positions', [MasterDataController::class, 'storePosition'])->name('master-data.positions.store');
+    Route::put('/master-data/positions/{id}', [MasterDataController::class, 'updatePosition'])->name('master-data.positions.update');
+    Route::delete('/master-data/positions/{id}', [MasterDataController::class, 'destroyPosition'])->name('master-data.positions.destroy');
 
     // Profil admin
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -110,3 +125,16 @@ Route::prefix('api/dashboard')->group(function () {
 });
 
 Route::post('admin/staffs/import', [StaffController::class, 'import'])->name('admin.staffs.import');
+
+// Serves files from private (local) storage, fallback to public storage if not found
+Route::get('storage/{path}', function ($path) {
+    if (\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($path);
+    }
+    
+    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
+    }
+    
+    abort(404);
+})->where('path', '.*')->name('storage.private.serve');

@@ -169,20 +169,23 @@
                             <div class="col-md-6 mb-3 mb-md-0">
                                 <div class="d-flex flex-column w-100">
                                     <label for="institution" class="form-label-custom">Instansi Asal</label>
-                                    <input type="text" class="form-control form-control-modern" id="institution" name="institution" value="{{ old('institution') }}" placeholder="Misal: PT. Rekayasa Industri" required>
+                                    <select class="form-control form-control-modern" id="institution" name="institution" required>
+                                        <option value="" disabled {{ old('institution') ? '' : 'selected' }}>Pilih Instansi...</option>
+                                        @foreach($institutions as $inst)
+                                            <option value="{{ $inst->name }}" {{ old('institution') == $inst->name ? 'selected' : '' }}>{{ $inst->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
-
+ 
                             <div class="col-md-6">
                                 <div class="d-flex flex-column w-100">
                                     <label for="department" class="form-label-custom">Departemen</label>
                                     <select class="form-control form-control-modern" id="department" name="department" required>
-                                        <option value="" disabled selected>Pilih Departemen...</option>
-                                        <option value="Mekanik Turbin" {{ old('department') == 'Mekanik Turbin' ? 'selected' : '' }}>Mekanik Turbin</option>
-                                        <option value="Elektrikal" {{ old('department') == 'Elektrikal' ? 'selected' : '' }}>Elektrikal</option>
-                                        <option value="Instrumen" {{ old('department') == 'Instrumen' ? 'selected' : '' }}>Instrumen</option>
-                                        <option value="Scaffolding" {{ old('department') == 'Scaffolding' ? 'selected' : '' }}>Scaffolding</option>
-                                        <option value="HSE" {{ old('department') == 'HSE' ? 'selected' : '' }}>HSE</option>
+                                        <option value="" disabled {{ old('department') ? '' : 'selected' }}>Pilih Departemen...</option>
+                                        @foreach($departments as $dept)
+                                            <option value="{{ $dept->name }}" {{ old('department') == $dept->name ? 'selected' : '' }}>{{ $dept->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -202,7 +205,12 @@
                             <div class="col-md-4 mb-3 mb-md-0">
                                 <div class="d-flex flex-column w-100">
                                     <label for="position" class="form-label-custom">Posisi / Jabatan</label>
-                                    <input type="text" class="form-control form-control-modern" id="position" name="position" value="{{ old('position') }}" placeholder="Misal: Supervisor Lapangan">
+                                    <select class="form-control form-control-modern" id="position" name="position">
+                                        <option value="" {{ old('position') ? '' : 'selected' }}>Pilih Posisi/Jabatan (Opsional)...</option>
+                                        @foreach($positions as $pos)
+                                            <option value="{{ $pos->name }}" {{ old('position') == $pos->name ? 'selected' : '' }}>{{ $pos->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
 
@@ -278,15 +286,15 @@
 
                                         {{-- Tab 2: Camera Capture --}}
                                         <div id="cameraTabContainer" class="w-100" style="display: none;">
-                                            <div id="cameraContainer" class="mx-auto mb-3" style="width: 180px; height: 240px; border-radius: 12px; border: 2px solid #4318ff; overflow: hidden; background-color: #000; position: relative;">
+                                            <div id="cameraContainer" class="mx-auto mb-3" style="width: 180px; height: 240px; border-radius: 16px; border: 3px solid #4318ff; overflow: hidden; background-color: #000; position: relative;">
                                                 <video id="videoElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
-                                                <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-gradient-to-t from-black/50 to-transparent d-flex justify-content-center" style="z-index: 10;">
-                                                    <button type="button" id="btnCapture" class="btn btn-sm btn-primary-modern py-1 px-3" style="font-size: 0.75rem;">
-                                                        📸 Tangkap Gambar
-                                                    </button>
-                                                </div>
                                             </div>
-                                            <div class="text-subtitle mb-3" style="font-size: 0.8rem;">Silakan posisikan wajah Anda tepat di tengah kamera.</div>
+                                            <div class="d-flex justify-content-center mb-3">
+                                                <button type="button" id="btnCapture" class="btn btn-sm btn-primary-modern px-4 py-2" style="border-radius: 20px; font-weight: 700; box-shadow: 0 4px 12px rgba(67, 24, 255, 0.2);">
+                                                    📸 Ambil Foto
+                                                </button>
+                                            </div>
+                                            <div class="text-subtitle mb-3" style="font-size: 0.8rem;">Silakan posisikan wajah Anda tepat di tengah kamera lalu klik tombol "Ambil Foto".</div>
                                         </div>
 
                                         {{-- Common Preview Box --}}
@@ -302,6 +310,7 @@
                                         </p>
 
                                         <input type="hidden" name="face_descriptor" id="face_descriptor">
+                                        <input type="hidden" name="photo_profile_captured" id="photo_profile_captured" value="{{ old('photo_profile_captured') }}">
                                     </div>
                                 </div>
                             </div>
@@ -401,7 +410,6 @@
             }
             
             alert(message);
-            // Switch back to upload tab
             switchToUploadTab();
         }
     }
@@ -432,35 +440,6 @@
 
     tabUpload.addEventListener('click', switchToUploadTab);
     tabCamera.addEventListener('click', switchToCameraTab);
-
-    btnCapture.addEventListener('click', () => {
-        if (!localStream) return;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 480;
-        canvas.height = 640;
-        const ctx = canvas.getContext('2d');
-
-        // Mirror captured image to match live preview
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob((blob) => {
-            if (!blob) return;
-
-            const file = new File([blob], "photo_profile_captured.jpg", { type: "image/jpeg" });
-            const container = new DataTransfer();
-            container.items.add(file);
-            fileInput.files = container.files;
-
-            // Trigger change event to process face landmarks
-            fileInput.dispatchEvent(new Event('change'));
-
-            // Stop camera and switch back to upload tab to show the results
-            switchToUploadTab();
-        }, 'image/jpeg', 0.9);
-    });
 
     let faceApiLoaded = false;
 
@@ -502,19 +481,11 @@
 
     const modelsReady = loadModels();
 
-    fileInput.addEventListener('change', async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
+    async function processFaceDetection(imageSource) {
         faceDescriptorInput.value = '';
         isProcessingFace = true;
         statusWajah.textContent = 'Memproses foto...';
         statusWajah.style.color = '';
-
-        const objectUrl = URL.createObjectURL(file);
-        previewFoto.src = objectUrl;
-        previewFoto.style.display = 'block';
-        iconCamera.style.display = 'none';
 
         try {
             await modelsReady;
@@ -525,9 +496,8 @@
                 return;
             }
 
-            const img = await faceapi.bufferToImage(file);
             const detection = await faceapi
-                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                .detectSingleFace(imageSource, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
@@ -547,6 +517,64 @@
         } finally {
             isProcessingFace = false;
         }
+    }
+
+    fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Clear captured photo since user chose manual upload
+        const capturedInput = document.getElementById('photo_profile_captured');
+        if (capturedInput) {
+            capturedInput.value = '';
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        previewFoto.src = objectUrl;
+        previewFoto.style.display = 'block';
+        iconCamera.style.display = 'none';
+
+        // Load image to pass to face-api
+        const img = new Image();
+        img.src = objectUrl;
+        img.onload = async () => {
+            await processFaceDetection(img);
+        };
+    });
+
+    btnCapture.addEventListener('click', () => {
+        if (!localStream) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 480;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+
+        // Mirror captured image to match live preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        // Store base64 data url in hidden input
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const capturedInput = document.getElementById('photo_profile_captured');
+        if (capturedInput) {
+            capturedInput.value = dataUrl;
+        }
+
+        // Show preview in upload tab
+        previewFoto.src = dataUrl;
+        previewFoto.style.display = 'block';
+        iconCamera.style.display = 'none';
+
+        // Clear file input since we are using camera capture instead
+        fileInput.value = '';
+
+        // Run face detection on the canvas directly
+        processFaceDetection(canvas);
+
+        // Stop camera and switch back to upload tab to show the results
+        switchToUploadTab();
     });
 
     formStaff.addEventListener('submit', (e) => {
@@ -555,13 +583,34 @@
             alert('Mohon tunggu, foto masih diproses...');
             return;
         }
-        if (fileInput.files.length > 0 && !faceDescriptorInput.value) {
+
+        const hasFile = fileInput.files.length > 0;
+        const hasCaptured = !!document.getElementById('photo_profile_captured').value;
+
+        if ((hasFile || hasCaptured) && !faceDescriptorInput.value) {
             const proceed = confirm('Wajah tidak terdeteksi di foto yang Anda masukkan. Apakah Anda ingin tetap menyimpan data pegawai tanpa verifikasi wajah otomatis? (Karyawan hanya bisa absen via QR Code / Manual)');
             if (!proceed) {
                 e.preventDefault();
             }
         }
     });
+
+    // Restore captured photo from old input if validation failed
+    const oldCaptured = document.getElementById('photo_profile_captured').value;
+    if (oldCaptured) {
+        previewFoto.src = oldCaptured;
+        previewFoto.style.display = 'block';
+        iconCamera.style.display = 'none';
+        statusWajah.textContent = '✓ Foto hasil kamera tersimpan.';
+        statusWajah.style.color = '#05cd99';
+
+        // Load image to pass to face-api for face detection restoration
+        const img = new Image();
+        img.src = oldCaptured;
+        img.onload = async () => {
+            await processFaceDetection(img);
+        };
+    }
 })();
 </script>
 @endpush

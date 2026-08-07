@@ -13,17 +13,36 @@ class StoreStaffRequest extends FormRequest
 
     public function rules(): array
     {
-        $staffId = $this->route('staff') ? $this->route('staff')->id : null;
+        $staff = $this->route('staff');
+        $staffId = is_object($staff) ? $staff->id : $staff;
 
         return [
             'staff_code' => 'required|string|max:50|unique:outsourcing_staffs,staff_code,' . $staffId,
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($staffId) {
+                    $exists = \App\Models\OutsourcingStaff::where('name', $value)
+                        ->where('institution', $this->input('institution'))
+                        ->where('is_registered', true)
+                        ->when($staffId, function ($query) use ($staffId) {
+                            $query->where('id', '!=', $staffId);
+                        })
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('Pegawai dengan nama "' . $value . '" sudah terdaftar pada instansi "' . $this->input('institution') . '".');
+                    }
+                }
+            ],
             'institution' => 'required|string|max:255',
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
-            'id_number' => 'nullable|string|max:50',
+            'id_number' => 'nullable|string|max:50|unique:outsourcing_staffs,id_number,' . $staffId,
             'photo_profile' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
+            'photo_profile_captured' => 'nullable|string',
             'password' => 'nullable|string|min:8',
             'email' => 'nullable|email|max:255',
 

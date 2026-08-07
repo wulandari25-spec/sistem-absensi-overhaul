@@ -175,7 +175,7 @@ class AttendanceController extends Controller
 
         $proofPhotoPath = null;
         if ($request->hasFile('proof_photo')) {
-            $proofPhotoPath = $request->file('proof_photo')->store('proof-photos', 'public');
+            $proofPhotoPath = $request->file('proof_photo')->store('proof-photos', 'local');
         }
 
         // Simpan data absensi manual
