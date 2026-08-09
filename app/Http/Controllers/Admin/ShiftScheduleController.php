@@ -44,10 +44,21 @@ class ShiftScheduleController extends Controller implements HasMiddleware
                 return $item->staff_id . '_' . $item->schedule_date->format('j');
             });
 
+        // Get actual check-in attendances grouped by staff_id and day
+        $attendances = \App\Models\Attendance::whereYear('checked_at', $year)
+            ->whereMonth('checked_at', $month)
+            ->where('status', \App\Enums\AttendanceStatus::CHECK_IN)
+            ->with('shift')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->staff_id . '_' . $item->checked_at->format('j');
+            });
+
         return view('admin.schedules.index', compact(
             'staffs',
             'shifts',
             'schedules',
+            'attendances',
             'year',
             'month',
             'daysInMonth'

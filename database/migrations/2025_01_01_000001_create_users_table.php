@@ -15,8 +15,10 @@ return new class extends Migration
                 $table->string('email')->unique();
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
-                $table->enum('role', ['admin', 'security', 'superadmin'])->default('security');
+                $table->string('role')->default('security');
                 $table->string('phone')->nullable();
+                $table->string('photo')->nullable();
+                $table->string('unit')->nullable();
                 $table->boolean('is_active')->default(true);
                 $table->rememberToken();
                 $table->timestamps();
@@ -27,13 +29,17 @@ return new class extends Migration
         } else {
             Schema::table('users', function (Blueprint $table) {
                 if (!Schema::hasColumn('users', 'role')) {
-                    $table->enum('role', ['admin', 'security', 'superadmin'])->default('security');
+                    $table->string('role')->default('security');
                 }
-
                 if (!Schema::hasColumn('users', 'phone')) {
                     $table->string('phone')->nullable();
                 }
-
+                if (!Schema::hasColumn('users', 'photo')) {
+                    $table->string('photo')->nullable();
+                }
+                if (!Schema::hasColumn('users', 'unit')) {
+                    $table->string('unit')->nullable();
+                }
                 if (!Schema::hasColumn('users', 'is_active')) {
                     $table->boolean('is_active')->default(true);
                 }

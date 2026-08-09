@@ -15,7 +15,12 @@ use App\Http\Controllers\Attendance\FaceRecognitionController;
 use App\Http\Controllers\Attendance\QrCodeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('attendance.check-in'));
+Route::get('/', function() {
+    if (session()->has('logged_in_staff_id')) {
+        return redirect()->route('attendance.history', session('logged_in_staff_id'));
+    }
+    return redirect()->route('employee.login');
+});
 
 // Debug route untuk troubleshoot view loading
 Route::get('/debug-views', function () {
@@ -51,8 +56,6 @@ Route::post('/employee/register', [EmployeeLoginController::class, 'register']);
 Route::post('/employee/logout', [EmployeeLoginController::class, 'logout'])->name('employee.logout');
 
 Route::prefix('attendance')->name('attendance.')->middleware(['auth.employee'])->group(function () {
-    Route::get('/check-in', [AttendanceController::class, 'showCheckIn'])->name('check-in');
-    Route::get('/qr-fallback', [AttendanceController::class, 'showQrFallback'])->name('qr-fallback');
     Route::get('/history/{staff_id}', [AttendanceController::class, 'showHistory'])->name('history');
     Route::get('/permit', [AttendanceController::class, 'showPermitForm'])->name('permit');
     Route::post('/permit', [AttendanceController::class, 'storePermitRequest'])->name('permit.store');
@@ -60,8 +63,15 @@ Route::prefix('attendance')->name('attendance.')->middleware(['auth.employee'])-
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/daily-attendance', [\App\Http\Controllers\Admin\DailyAttendanceController::class, 'index'])->name('daily-attendance.index');
+    Route::get('/occupancy', [\App\Http\Controllers\Admin\RoomOccupancyController::class, 'index'])->name('occupancy.index');
+    Route::get('/occupancy/scan', [\App\Http\Controllers\Admin\RoomOccupancyController::class, 'showScan'])->name('occupancy.scan');
+    Route::post('/occupancy/scan', [\App\Http\Controllers\Admin\RoomOccupancyController::class, 'processScan'])->name('occupancy.scan.process');
+    Route::get('/attendance/scan', [AttendanceController::class, 'showAdminScan'])->name('daily-attendance.scan');
     Route::post('staffs/{staff}/attendance', [StaffController::class, 'storeManualAttendance'])->name('staffs.attendance.store');
     Route::post('staffs/{staff}/sync-biometrics', [StaffController::class, 'syncBiometrics'])->name('staffs.sync-biometrics');
+    Route::get('staffs/{staff}/register-face', [StaffController::class, 'showRegisterFace'])->name('staffs.register-face');
+    Route::post('staffs/{staff}/register-face', [StaffController::class, 'storeRegisterFace'])->name('staffs.register-face.store');
     
     // Ekspor Data Evakuasi Darurat K3
     Route::get('/evacuation/export/csv', [StaffController::class, 'exportEvacuationCsv'])->name('evacuation.export.csv');

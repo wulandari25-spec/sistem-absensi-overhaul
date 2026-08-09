@@ -129,7 +129,8 @@ class StaffController extends Controller implements HasMiddleware
             unset($data['face_descriptor']);
         }
 
-        OutsourcingStaff::create($data);
+        $data['is_face_registered'] = false;
+        $staff = OutsourcingStaff::create($data);
 
         return redirect()->route('admin.staffs.index')
             ->with('success', 'Data pegawai berhasil ditambahkan.');
@@ -213,7 +214,13 @@ class StaffController extends Controller implements HasMiddleware
 
     public function destroy(OutsourcingStaff $staff)
     {
-        $staff->update(['is_registered' => false]);
+        $faceMatchingService = app(\App\Services\FaceMatchingService::class);
+        $faceMatchingService->deleteFace($staff->staff_code);
+
+        $staff->update([
+            'is_registered' => false,
+            'is_face_registered' => false,
+        ]);
 
         return redirect()->route('admin.staffs.index')
             ->with('success', 'Pegawai berhasil dinonaktifkan.');
@@ -229,21 +236,25 @@ class StaffController extends Controller implements HasMiddleware
     public function storeManualAttendance(Request $request, OutsourcingStaff $staff)
     {
         $validated = $request->validate([
-            'status' => 'required|in:check_in,permit,sick',
+            'status' => 'required|in:check_in,check_out,permit,sick',
+            'shift_id' => 'required_if:status,check_in|nullable|exists:shifts,id',
             'notes' => 'required_if:status,permit,sick|nullable|string|max:500',
         ], [
             'status.required' => 'Pilih jenis status kehadiran.',
+            'shift_id.required_if' => 'Shift kerja wajib dipilih untuk status Masuk.',
             'notes.required_if' => 'Keterangan/alasan wajib diisi untuk Izin atau Sakit.',
         ]);
 
         $status = $validated['status'];
         $notes = $validated['notes'] ?? 'Pencatatan kehadiran manual oleh administrator/petugas';
+        $shiftId = $validated['shift_id'] ?? null;
 
         // Buat data absensi manual
         $staff->attendances()->create([
             'status' => $status,
             'method' => 'manual',
             'notes' => $notes,
+            'shift_id' => $shiftId,
             'checked_at' => now(),
         ]);
 
@@ -256,6 +267,7 @@ class StaffController extends Controller implements HasMiddleware
 
         $statusLabel = match($status) {
             'check_in' => 'Masuk',
+            'check_out' => 'Pulang',
             'permit' => 'Izin',
             'sick' => 'Sakit',
         };
@@ -368,17 +380,68 @@ class StaffController extends Controller implements HasMiddleware
 
     public function syncBiometrics(Request $request, OutsourcingStaff $staff)
     {
-        $validated = $request->validate([
-            'face_descriptor' => 'required|json',
-        ]);
+        if (!$staff->photo_profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Karyawan tidak memiliki foto profil.'
+            ], 422);
+        }
 
-        $staff->update([
-            'face_descriptor' => json_decode($validated['face_descriptor'], true)
-        ]);
+        $faceMatchingService = app(\App\Services\FaceMatchingService::class);
+        $result = $faceMatchingService->registerFace($staff->staff_code, $staff->photo_profile);
+
+        if ($result['success']) {
+            $staff->update(['is_face_registered' => true]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Wajah berhasil disinkronkan ke server face recognition!'
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Koordinat biometrik wajah berhasil disinkronkan dari foto profil!'
+            'success' => false,
+            'message' => $result['message'] ?? 'Gagal sinkronisasi wajah.'
+        ], 422);
+    }
+
+    public function showRegisterFace(OutsourcingStaff $staff)
+    {
+        return view('admin.staffs.register-face', compact('staff'));
+    }
+
+    public function storeRegisterFace(Request $request, OutsourcingStaff $staff)
+    {
+        $request->validate([
+            'captured_image' => 'nullable|string',
+            'uploaded_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
+
+        $photoBase64 = null;
+
+        if ($request->filled('captured_image')) {
+            $photoBase64 = $request->input('captured_image');
+        } elseif ($request->hasFile('uploaded_image')) {
+            $file = $request->file('uploaded_image');
+            $fileData = file_get_contents($file->getRealPath());
+            $photoBase64 = 'data:' . $file->getMimeType() . ';base64,' . base64_encode($fileData);
+        }
+
+        if (!$photoBase64) {
+            return back()->withErrors(['error' => 'Pilih salah satu metode: Scan Wajah (Kamera) atau Unggah Foto.']);
+        }
+
+        $faceMatchingService = app(\App\Services\FaceMatchingService::class);
+        $result = $faceMatchingService->registerFace($staff->staff_code, $photoBase64);
+
+        if ($result['success']) {
+            $staff->update([
+                'is_face_registered' => true,
+            ]);
+
+            return redirect()->route('admin.staffs.index')
+                ->with('success', "Wajah untuk {$staff->name} berhasil didaftarkan.");
+        }
+
+        return back()->withErrors(['error' => $result['message'] ?? 'Gagal mendaftarkan wajah ke server face recognition.']);
     }
 }

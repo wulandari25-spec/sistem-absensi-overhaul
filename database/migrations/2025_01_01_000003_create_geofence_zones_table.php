@@ -14,7 +14,8 @@ return new class extends Migration
             $table->string('zone_code', 20)->unique()->comment('Kode zona, e.g. ZONE-U1');
             $table->decimal('center_lat', 10, 8)->comment('Latitude titik pusat zona');
             $table->decimal('center_lng', 11, 8)->comment('Longitude titik pusat zona');
-            $table->unsignedInteger('radius_meters')->default(500)->comment('Radius geofence dalam meter');
+            $table->unsignedInteger('radius_meters')->nullable()->comment('Radius geofence dalam meter');
+            $table->json('coordinates')->nullable()->comment('Array of polygon vertices [{"lat": y, "lng": x}, ...]');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

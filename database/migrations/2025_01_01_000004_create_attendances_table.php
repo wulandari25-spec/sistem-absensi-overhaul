@@ -21,6 +21,10 @@ return new class extends Migration
                   ->nullable()
                   ->constrained('geofence_zones')
                   ->nullOnDelete();
+            $table->foreignId('shift_id')
+                  ->nullable()
+                  ->constrained('shifts')
+                  ->nullOnDelete();
             $table->enum('method', ['face_recognition', 'qr_code', 'manual'])
                   ->nullable()
                   ->comment('Metode presensi yang digunakan');

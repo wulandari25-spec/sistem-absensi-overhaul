@@ -105,6 +105,40 @@ async function refreshStats() {
     }
 }
 
+async function refreshActivityLog() {
+    try {
+        const response = await fetch('/api/dashboard/activity-log?limit=5', {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const tbody = document.getElementById('activity-log-body');
+        if (!tbody || !data.logs) return;
+        
+        if (data.logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500"><svg class="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Belum ada aktivitas presensi hari ini</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.logs.slice(0, 5).map(log => `
+            <tr class="log-row border-b border-slate-50 dark:border-slate-800/50">
+                <td class="px-6 py-3 text-sm font-mono text-slate-600 dark:text-slate-300">${log.checked_at}</td>
+                <td class="px-6 py-3"><div><p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${log.staff_name}</p><p class="text-xs text-slate-500">${log.staff_code}</p></div></td>
+                <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">${log.institution}</td>
+                <td class="px-6 py-3">${log.status === 'check_in' ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>MASUK</span>' : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 text-xs font-semibold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>KELUAR</span>'}</td>
+                <td class="px-6 py-3"><span class="inline-flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-400">${log.method_icon || ''} ${log.method_label}</span></td>
+                <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">${log.zone_name}</td>
+                <td class="px-6 py-3">${log.is_flagged ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-semibold" title="${log.flag_reason || ''}">🚨 Flagged</span>` : '<span class="text-xs text-slate-400">✓</span>'}</td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Failed to refresh activity log:', err);
+    }
+}
+
 async function refreshHourlyChart() {
     try {
         const response = await fetch('/api/dashboard/hourly-population', {

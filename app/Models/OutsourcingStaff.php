@@ -14,7 +14,7 @@ class OutsourcingStaff extends Model
 
     protected $fillable = [
         'staff_code', 'name', 'institution', 'department', 'position',
-        'face_descriptor', 'photo_profile', 'phone', 'id_number',
+        'face_descriptor', 'is_face_registered', 'photo_profile', 'phone', 'id_number',
         'is_active_onsite', 'last_seen_at', 'is_registered', 'password',
         'contract_start_date', 'contract_end_date',
     ];
@@ -23,6 +23,7 @@ class OutsourcingStaff extends Model
     {
         return [
             'face_descriptor' => 'array',
+            'is_face_registered' => 'boolean',
             'is_active_onsite' => 'boolean',
             'is_registered' => 'boolean',
             'last_seen_at' => 'datetime',

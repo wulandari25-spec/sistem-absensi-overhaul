@@ -4,7 +4,7 @@
 @section('header', 'Detail Pegawai')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6" x-data="{ showManualAttendanceModal: false }">
+<div class="max-w-4xl mx-auto space-y-6">
     @if(session('success'))
     <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>✅ {{ session('success') }}</div>
     @endif
@@ -14,29 +14,6 @@
         <a href="{{ route('admin.staffs.index') }}" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
             ← Kembali
         </a>
-        @if(!auth()->user()->isK3())
-        <div class="flex flex-wrap gap-3">
-            <button @click="showManualAttendanceModal = true" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-455 text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Pencatatan Manual
-            </button>
-            
-            @if(!auth()->user()->isSecurity())
-            <a href="{{ route('admin.staffs.edit', $staff) }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Edit
-            </a>
-            <form action="{{ route('admin.staffs.destroy', $staff) }}" method="POST" class="inline">
-                @csrf
-                @method('DELETE')
-                <button type="submit" onclick="return confirm('Yakin ingin menonaktifkan pegawai ini?')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    Nonaktifkan
-                </button>
-            </form>
-            @endif
-        </div>
-        @endif
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -115,23 +92,15 @@
 
                 <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status Face Data</p>
-                    @if($staff->face_descriptor)
+                    @if($staff->is_face_registered)
                         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                             Terdaftar
                         </span>
                     @else
-                        <div class="flex items-center flex-wrap gap-2">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">
-                                Belum Terdaftar
-                            </span>
-                            @if($staff->photo_profile)
-                                <button id="btnSyncBiometrics" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-xs font-bold transition-all border border-indigo-200 dark:border-indigo-800/60 cursor-pointer">
-                                    ⚙️ Sinkronkan Data Wajah
-                                </button>
-                            @endif
-                        </div>
-                        <div id="syncStatus" class="text-xs font-semibold text-slate-500 mt-2 hidden"></div>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                            Belum Terdaftar
+                        </span>
                     @endif
                 </div>
             </div>
@@ -149,14 +118,20 @@
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $staff->name }}</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono font-bold">{{ $staff->staff_code }}</p>
             
-            <div class="w-full border-t border-slate-100 dark:border-slate-800/80 my-4 pt-4 flex flex-col items-center">
-                <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">QR Code Pegawai</p>
-                <div class="bg-white p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner mb-3">
+            <div class="w-full border-t border-slate-100 dark:border-slate-800/80 my-4 pt-4 flex flex-col items-center gap-2">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">QR Code Pegawai</p>
+                <div class="bg-white p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ $staff->staff_code }}" alt="QR Code {{ $staff->name }}" class="w-28 h-28">
                 </div>
-                <button onclick="window.print()" class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-500 font-bold hover:underline flex items-center gap-1">
-                    🖨️ Cetak Kartu ID / QR
-                </button>
+                
+                <div class="flex flex-col gap-1.5 w-full mt-1.5">
+                    <button onclick="downloadQrOnly()" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-transparent dark:border-slate-800">
+                        📥 Unduh QR Code
+                    </button>
+                    <button onclick="printQrOnly()" class="w-full py-2 rounded-xl bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/20 dark:hover:bg-brand-950/40 text-brand-600 dark:text-brand-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                        🖨️ Cetak Kartu ID / QR
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -247,190 +222,112 @@
         </div>
         @endif
     </div>
-
-    <!-- Modal Pencatatan Manual (Masuk/Izin/Sakit) -->
-    <div x-show="showManualAttendanceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" x-transition>
-        <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6" @click.away="showManualAttendanceModal = false">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Pencatatan Kehadiran Manual</h3>
-                <button @click="showManualAttendanceModal = false" class="text-slate-400 hover:text-slate-650 dark:hover:text-slate-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            
-            <form action="{{ route('admin.staffs.attendance.store', $staff) }}" method="POST" class="space-y-4" x-data="{ statusType: 'check_in' }">
-                @csrf
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Status Kehadiran</label>
-                    <div class="grid grid-cols-3 gap-3">
-                        <label :class="statusType === 'check_in' ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
-                            <input type="radio" name="status" value="check_in" x-model="statusType" class="sr-only">
-                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">✅ Masuk</span>
-                        </label>
-                        <label :class="statusType === 'permit' ? 'border-amber-500 ring-2 ring-amber-500/25 bg-amber-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
-                            <input type="radio" name="status" value="permit" x-model="statusType" class="sr-only">
-                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">📝 Izin</span>
-                        </label>
-                        <label :class="statusType === 'sick' ? 'border-rose-500 ring-2 ring-rose-500/25 bg-rose-50/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'" class="relative flex items-center justify-center p-3 rounded-xl border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors">
-                            <input type="radio" name="status" value="sick" x-model="statusType" class="sr-only">
-                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">🤒 Sakit</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div>
-                    <label for="notes" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Alasan / Keterangan</label>
-                    <textarea 
-                        name="notes" 
-                        id="notes" 
-                        rows="3" 
-                        :required="statusType !== 'check_in'" 
-                        :placeholder="statusType === 'check_in' ? 'Tuliskan catatan opsional (misal: masuk lembur, masuk telat)...' : 'Tuliskan alasan keterangan wajib (misal: sakit demam, keperluan dinas)...'" 
-                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    ></textarea>
-                </div>
-                
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" @click="showManualAttendanceModal = false" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium transition-colors">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-brand-500/25 transition-all">Simpan Catatan</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
-@endsection
 
-@push('scripts')
-<script src="{{ asset('js/face-api.min.js') }}"></script>
 <script>
-(function () {
-    const btnSync = document.getElementById('btnSyncBiometrics');
-    const syncStatus = document.getElementById('syncStatus');
-
-    if (!btnSync) return;
-
-    let faceApiLoaded = false;
-
-    async function waitForFaceApi() {
-        return new Promise((resolve, reject) => {
-            if (window.faceapi) {
-                faceApiLoaded = true;
-                return resolve();
-            }
-            let elapsed = 0;
-            const check = setInterval(() => {
-                elapsed += 100;
-                if (window.faceapi) {
-                    clearInterval(check);
-                    faceApiLoaded = true;
-                    resolve();
-                } else if (elapsed > 5000) {
-                    clearInterval(check);
-                    reject(new Error("Timeout loading face-api.js"));
-                }
-            }, 100);
+function downloadQrOnly() {
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ $staff->staff_code }}";
+    const filename = "QR_Code_{{ str_replace(' ', '_', $staff->name) }}.png";
+    
+    fetch(qrUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+        })
+        .catch(err => {
+            console.error("Gagal mengunduh QR Code:", err);
+            window.open(qrUrl, '_blank');
         });
-    }
+}
 
-    async function loadModels() {
-        try {
-            await waitForFaceApi();
-            const MODEL_URL = '/models';
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-            ]);
-        } catch (err) {
-            console.warn('Face-API initialization failed:', err);
-            faceApiLoaded = false;
-        }
-    }
-
-    const modelsReady = loadModels();
-
-    btnSync.addEventListener('click', async () => {
-        btnSync.disabled = true;
-        btnSync.textContent = '⏳ Memproses...';
-        syncStatus.classList.remove('hidden');
-        syncStatus.style.color = '#718096';
-        syncStatus.textContent = 'Memuat model biometrik wajah...';
-
-        try {
-            await modelsReady;
-
-            if (!window.faceapi || !faceApiLoaded) {
-                throw new Error("Sistem deteksi wajah offline atau gagal dimuat.");
-            }
-
-            syncStatus.textContent = 'Memuat foto profil untuk dipindai...';
-
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.src = "{{ asset('storage/' . $staff->photo_profile) }}";
-            
-            img.onload = async () => {
-                try {
-                    syncStatus.textContent = 'Memindai koordinat wajah dari foto...';
-                    const detection = await faceapi
-                        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-
-                    if (!detection) {
-                        throw new Error("Wajah tidak terdeteksi pada foto profil saat ini. Silakan ganti dengan foto profil yang lebih jelas via menu Edit.");
-                    }
-
-                    syncStatus.textContent = 'Menyimpan koordinat biometrik ke database...';
-                    const descriptor = Array.from(detection.descriptor);
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                    const response = await fetch("{{ route('admin.staffs.sync-biometrics', $staff) }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken || ''
-                        },
-                        body: JSON.stringify({
-                            face_descriptor: JSON.stringify(descriptor)
-                        })
-                    });
-
-                    const resData = await response.json();
-                    if (resData.success) {
-                        syncStatus.style.color = '#05cd99';
-                        syncStatus.textContent = '✓ Sukses: Koordinat biometrik berhasil disinkronkan!';
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        throw new Error(resData.message || 'Gagal sinkronisasi data wajah.');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    syncStatus.style.color = '#f04438';
-                    syncStatus.textContent = '❌ Error: ' + err.message;
-                    btnSync.disabled = false;
-                    btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
+function printQrOnly() {
+    const printWindow = window.open('', '_blank');
+    const name = "{{ $staff->name }}";
+    const staffCode = "{{ $staff->staff_code }}";
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(staffCode);
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cetak QR Code - ${name}</title>
+            <style>
+                body {
+                    margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background-color: white;
+                    color: black;
                 }
-            };
-
-            img.onerror = () => {
-                syncStatus.style.color = '#f04438';
-                syncStatus.textContent = '❌ Error: Gagal memuat file foto profil dari server.';
-                btnSync.disabled = false;
-                btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
-            };
-
-        } catch (err) {
-            console.error(err);
-            syncStatus.style.color = '#f04438';
-            syncStatus.textContent = '❌ Error: ' + err.message;
-            btnSync.disabled = false;
-            btnSync.textContent = '⚙️ Sinkronkan Data Wajah';
-        }
-    });
-})();
+                .card {
+                    border: 2px solid #e2e8f0;
+                    border-radius: 24px;
+                    padding: 32px;
+                    text-align: center;
+                    width: 280px;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    background: white;
+                }
+                .qr-img {
+                    width: 220px;
+                    height: 220px;
+                    margin-bottom: 20px;
+                }
+                .name {
+                    font-size: 20px;
+                    font-weight: 800;
+                    color: #1e293b;
+                    margin: 0 0 6px 0;
+                }
+                .code {
+                    font-size: 14px;
+                    color: #64748b;
+                    font-family: monospace;
+                    font-weight: 700;
+                    margin: 0;
+                    letter-spacing: 0.5px;
+                }
+                @media print {
+                    body {
+                        height: auto;
+                        background: none;
+                    }
+                    .card {
+                        border: none;
+                        box-shadow: none;
+                        padding: 0;
+                        margin: 40px auto;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <img class="qr-img" src="${qrUrl}" alt="QR Code">
+                <h3 class="name">${name}</h3>
+                <p class="code">${staffCode}</p>
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 500);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
 </script>
-@endpush
+@endsection

@@ -53,10 +53,21 @@
                     @forelse($staffs as $staff)
                     <tr class="log-row border-b border-slate-50 dark:border-slate-800/50">
                         <td class="px-6 py-3 text-sm font-mono font-semibold text-brand-600 dark:text-brand-400">{{ $staff->staff_code }}</td>
-                        <td class="px-6 py-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{{ substr($staff->name, 0, 1) }}</div><span class="text-sm font-medium">{{ $staff->name }}</span></div></td>
+                        <td class="px-6 py-3">
+                            <div class="flex items-center gap-3">
+                                @if($staff->photo_profile)
+                                    <img src="{{ asset('storage/' . $staff->photo_profile) }}" alt="{{ $staff->name }}" class="w-8 h-8 rounded-full object-cover">
+                                @else
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                                        {{ substr($staff->name, 0, 1) }}
+                                    </div>
+                                @endif
+                                <span class="text-sm font-medium">{{ $staff->name }}</span>
+                            </div>
+                        </td>
                         <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $staff->institution }}</td>
                         <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $staff->department ?? '-' }}</td>
-                        <td class="px-6 py-3">@if($staff->face_descriptor)<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-medium">✓ Terdaftar</span>@else<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-medium">— Belum</span>@endif</td>
+                        <td class="px-6 py-3">@if($staff->is_face_registered)<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-medium">✓ Terdaftar</span>@else<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-medium">— Belum</span>@endif</td>
                         <td class="px-6 py-3">
                             @php
                                 $todayAttendance = $staff->attendances()->whereDate('checked_at', today())->latest()->first();
@@ -77,6 +88,9 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </a>
                                 @if(!auth()->user()->isK3() && !auth()->user()->isSecurity())
+                                    <a href="{{ route('admin.staffs.register-face', $staff) }}" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors" title="Daftarkan Wajah">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </a>
                                     <a href="{{ route('admin.staffs.edit', $staff) }}" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors" title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>

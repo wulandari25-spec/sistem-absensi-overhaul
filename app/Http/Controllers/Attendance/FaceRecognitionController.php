@@ -14,32 +14,19 @@ class FaceRecognitionController extends Controller
 
     public function getFaceDescriptors(): JsonResponse
     {
-        $staffs = OutsourcingStaff::registered()
-            ->withFaceData()
-            ->select(['id', 'staff_code', 'name', 'face_descriptor'])
-            ->get();
-
         return response()->json([
             'success' => true,
-            'descriptors' => $staffs->map(function ($staff) {
-                return [
-                    'id' => $staff->id,
-                    'staff_code' => $staff->staff_code,
-                    'name' => $staff->name,
-                    'descriptor' => $staff->face_descriptor,
-                ];
-            }),
+            'descriptors' => [],
         ]);
     }
 
     public function matchFace(Request $request): JsonResponse
     {
         $request->validate([
-            'face_descriptor' => 'required|array',
-            'face_descriptor.*' => 'numeric',
+            'proof_photo' => 'required|string',
         ]);
 
-        $result = $this->faceMatchingService->findBestMatch($request->input('face_descriptor'));
+        $result = $this->faceMatchingService->findBestMatch($request->input('proof_photo'));
 
         if ($result['matched']) {
             $staff = $result['staff'];
@@ -53,7 +40,7 @@ class FaceRecognitionController extends Controller
                     'name' => $staff->name,
                     'institution' => $staff->institution,
                 ],
-                'confidence' => round(1 - $result['distance'], 4),
+                'confidence' => round($result['confidence'], 4),
                 'distance' => round($result['distance'], 4),
             ]);
         }
@@ -61,8 +48,8 @@ class FaceRecognitionController extends Controller
         return response()->json([
             'success' => true,
             'matched' => false,
-            'message' => 'Tidak ditemukan kecocokan wajah. Silakan coba lagi atau gunakan QR Code.',
-            'distance' => $result['staff'] ? round($result['distance'], 4) : null,
+            'message' => $result['message'] ?? 'Tidak ditemukan kecocokan wajah. Silakan coba lagi atau gunakan QR Code.',
+            'distance' => round($result['distance'], 4),
         ]);
     }
 
@@ -70,18 +57,27 @@ class FaceRecognitionController extends Controller
     {
         $request->validate([
             'staff_id' => 'required|integer|exists:outsourcing_staffs,id',
-            'face_descriptor' => 'required|array|min:128|max:128',
-            'face_descriptor.*' => 'numeric',
+            'proof_photo' => 'required|string',
         ]);
 
         $staff = OutsourcingStaff::findOrFail($request->input('staff_id'));
-        $staff->update([
-            'face_descriptor' => $request->input('face_descriptor'),
-        ]);
+        
+        $result = $this->faceMatchingService->registerFace($staff->staff_code, $request->input('proof_photo'));
+
+        if ($result['success']) {
+            $staff->update([
+                'is_registered' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Data wajah untuk {$staff->name} berhasil didaftarkan.",
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => "Data wajah untuk {$staff->name} berhasil didaftarkan.",
-        ]);
+            'success' => false,
+            'message' => $result['message'] ?? "Gagal mendaftarkan wajah.",
+        ], 422);
     }
 }

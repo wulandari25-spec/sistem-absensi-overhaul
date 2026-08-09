@@ -16,7 +16,7 @@ class EmployeeLoginController extends Controller
     public function showLoginForm()
     {
         if (session()->has('logged_in_staff_id')) {
-            return redirect()->route('attendance.check-in');
+            return redirect()->route('attendance.history', session('logged_in_staff_id'));
         }
         return view('auth.employee-login');
     }
@@ -49,7 +49,7 @@ class EmployeeLoginController extends Controller
         session()->put('logged_in_staff_name', $staff->name);
         session()->put('logged_in_staff_code', $staff->staff_code);
 
-        return redirect()->route('attendance.check-in');
+        return redirect()->route('attendance.history', $staff->id);
     }
 
     /**
@@ -58,7 +58,7 @@ class EmployeeLoginController extends Controller
     public function showRegisterForm()
     {
         if (session()->has('logged_in_staff_id')) {
-            return redirect()->route('attendance.check-in');
+            return redirect()->route('attendance.history', session('logged_in_staff_id'));
         }
         return view('auth.employee-register');
     }

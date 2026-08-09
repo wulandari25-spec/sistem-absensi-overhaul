@@ -33,10 +33,21 @@ class AttendanceService
             if ($staff->is_active_onsite) {
                 return [
                     'success' => false,
-                    'message' => 'Pegawai sudah tercatat berada di dalam area. Silakan check-out terlebih dahulu.',
+                    'message' => 'Pegawai sudah tercatat berada di dalam area (sudah check-in).',
                     'attendance' => null,
                 ];
             }
+
+            // Validasi Jadwal Shift & Rentang Jam Masuk
+            $shiftValidation = $this->validateShiftWindow($staff, AttendanceStatus::CHECK_IN);
+            if (!$shiftValidation['valid']) {
+                return [
+                    'success' => false,
+                    'message' => $shiftValidation['message'],
+                    'attendance' => null,
+                ];
+            }
+            $shiftId = $shiftValidation['shift']?->id;
 
             $zone = $this->geofenceService->validatePosition($lat, $lng);
             $isFlagged = false;
@@ -63,12 +74,6 @@ class AttendanceService
                 $flagReason = "Skor kecocokan wajah rendah: {$confidenceScore}";
             }
 
-            $todayDate = now()->format('Y-m-d');
-            $schedule = \App\Models\StaffSchedule::where('staff_id', $staffId)
-                ->where('schedule_date', $todayDate)
-                ->first();
-            $shiftId = $schedule?->shift_id;
-
             $attendance = Attendance::create([
                 'staff_id' => $staffId,
                 'geofence_zone_id' => $zone?->id,
@@ -90,8 +95,8 @@ class AttendanceService
             return [
                 'success' => true,
                 'message' => $isFlagged
-                    ? 'Check-in tercatat dengan peringatan. Petugas keamanan akan mereview.'
-                    : 'Check-in berhasil! Selamat bekerja dengan selamat.',
+                    ? 'Akses masuk ruangan tercatat dengan catatan peringatan.'
+                    : 'Akses masuk ruangan berhasil! Selamat bekerja dengan selamat.',
                 'attendance' => $attendance,
             ];
         });
@@ -112,10 +117,21 @@ class AttendanceService
             if (!$staff->is_active_onsite) {
                 return [
                     'success' => false,
-                    'message' => 'Pegawai belum tercatat check-in. Tidak dapat melakukan check-out.',
+                    'message' => 'Pegawai belum tercatat masuk ruangan. Silakan scan masuk terlebih dahulu.',
                     'attendance' => null,
                 ];
             }
+
+            // Validasi Jadwal Shift & Akses Keluar
+            $shiftValidation = $this->validateShiftWindow($staff, AttendanceStatus::CHECK_OUT);
+            if (!$shiftValidation['valid']) {
+                return [
+                    'success' => false,
+                    'message' => $shiftValidation['message'],
+                    'attendance' => null,
+                ];
+            }
+            $shiftId = $shiftValidation['shift']?->id;
 
             $zone = $this->geofenceService->validatePosition($lat, $lng);
             $isFlagged = false;
@@ -125,15 +141,9 @@ class AttendanceService
             if ($staff->contract_start_date && $staff->contract_end_date) {
                 if (!now()->between($staff->contract_start_date->startOfDay(), $staff->contract_end_date->endOfDay())) {
                     $isFlagged = true;
-                    $flagReason = 'Presensi dilakukan di luar masa kontrak aktif (' . $staff->contract_start_date->format('d/m/Y') . ' s/d ' . $staff->contract_end_date->format('d/m/Y') . ')';
+                    $flagReason = 'Akses dilakukan di luar masa kontrak aktif (' . $staff->contract_start_date->format('d/m/Y') . ' s/d ' . $staff->contract_end_date->format('d/m/Y') . ')';
                 }
             }
-
-            $todayDate = now()->format('Y-m-d');
-            $schedule = \App\Models\StaffSchedule::where('staff_id', $staffId)
-                ->where('schedule_date', $todayDate)
-                ->first();
-            $shiftId = $schedule?->shift_id;
 
             $attendance = Attendance::create([
                 'staff_id' => $staffId,
@@ -155,10 +165,137 @@ class AttendanceService
 
             return [
                 'success' => true,
-                'message' => 'Check-out berhasil! Hati-hati di jalan.',
+                'message' => 'Akses keluar ruangan berhasil! Hati-hati di jalan.',
                 'attendance' => $attendance,
             ];
         });
+    }
+
+    /**
+     * Menentukan shift dan memvalidasi apakah waktu saat ini diizinkan untuk presensi masuk / pulang.
+     */
+    public function validateShiftWindow(OutsourcingStaff $staff, AttendanceStatus $type): array
+    {
+        $todayDate = now()->format('Y-m-d');
+        
+        // 1. Ambil jadwal terdaftar jika ada
+        $schedule = \App\Models\StaffSchedule::with('shift')
+            ->where('staff_id', $staff->id)
+            ->where('schedule_date', $todayDate)
+            ->first();
+            
+        $shift = $schedule?->shift;
+
+        // 2. Jika tidak ada jadwal khusus hari ini, cari shift yang mencakup waktu sekarang
+        if (!$shift) {
+            $nowTime = now()->format('H:i:s');
+            $allShifts = \App\Models\Shift::all();
+
+            foreach ($allShifts as $s) {
+                $start = $s->start_time;
+                $end = $s->end_time;
+
+                if ($end <= $start) {
+                    // Shift malam / sore lintas hari (misal 16:00 - 00:00 atau 20:00 - 04:00)
+                    if ($nowTime >= $start || $nowTime < $end || $end === '00:00:00') {
+                        if ($nowTime >= $start || ($end === '00:00:00' && $nowTime >= '16:00:00')) {
+                            $shift = $s;
+                            break;
+                        }
+                    }
+                } else {
+                    if ($nowTime >= $start && $nowTime <= $end) {
+                        $shift = $s;
+                        break;
+                    }
+                }
+            }
+
+            // Fallback ke shift terdekat jika di luar jam shift standar
+            if (!$shift && $allShifts->count() > 0) {
+                $shift = $allShifts->first();
+            }
+        }
+
+        if ($type === AttendanceStatus::CHECK_IN) {
+            // Cek apakah sudah pernah check-in hari ini
+            $existingCheckIn = Attendance::where('staff_id', $staff->id)
+                ->where('status', AttendanceStatus::CHECK_IN)
+                ->whereDate('checked_at', $todayDate)
+                ->latest('checked_at')
+                ->first();
+
+            if ($existingCheckIn && $staff->is_active_onsite) {
+                return [
+                    'valid' => false,
+                    'message' => "Anda sudah mencatat akses masuk ruangan hari ini pada pukul " . $existingCheckIn->checked_at->format('H:i') . " WIB.",
+                    'shift' => $shift,
+                ];
+            }
+        } elseif ($type === AttendanceStatus::CHECK_OUT) {
+            // Cek log check-in terakhir
+            $lastCheckIn = Attendance::where('staff_id', $staff->id)
+                ->where('status', AttendanceStatus::CHECK_IN)
+                ->latest('checked_at')
+                ->first();
+
+            if ($lastCheckIn) {
+                // Cegah scan ganda instan (minimal 30 detik setelah scan masuk)
+                if (now()->diffInSeconds($lastCheckIn->checked_at) < 30) {
+                    return [
+                        'valid' => false,
+                        'message' => "Anda baru saja melakukan scan masuk pada " . $lastCheckIn->checked_at->format('H:i:s') . " WIB. Silakan tunggu beberapa detik untuk scan keluar.",
+                        'shift' => $shift,
+                    ];
+                }
+            }
+        }
+
+        return [
+            'valid' => true,
+            'message' => null,
+            'shift' => $shift,
+        ];
+    }
+
+    private function getShiftTimeWindow(\App\Models\Shift $shift, AttendanceStatus $type, \Carbon\Carbon $now): array
+    {
+        $today = $now->copy()->startOfDay();
+        
+        $startParts = explode(':', $shift->start_time);
+        $endParts = explode(':', $shift->end_time);
+
+        $shiftStart = $today->copy()->setTime((int)$startParts[0], (int)$startParts[1], 0);
+        $shiftEnd = $today->copy()->setTime((int)$endParts[0], (int)$endParts[1], 0);
+
+        // Jika shift lintas hari (misal 16:00 - 00:00 atau 20:00 - 04:00)
+        if ($shiftEnd->lte($shiftStart)) {
+            $shiftEnd->addDay();
+        }
+
+        // Khusus Shift Malam yang mulai jam 00:00 (presensi masuk mulai jam 22:00 malam sebelumnya)
+        if ((int)$startParts[0] === 0 && $now->hour >= 22) {
+            $shiftStart->addDay();
+            $shiftEnd->addDay();
+        }
+
+        if ($type === AttendanceStatus::CHECK_IN) {
+            return [
+                'start' => $shiftStart->copy()->subHours(2), // 2 jam sebelum mulai
+                'end'   => $shiftStart->copy()->addHours(4), // batas 4 jam setelah mulai
+            ];
+        } else {
+            return [
+                'start' => $shiftEnd->copy()->subMinutes(30), // 30 menit sebelum pulang
+                'end'   => $shiftEnd->copy()->addHours(4),    // batas 4 jam setelah pulang
+            ];
+        }
+    }
+
+    private function isTimeInShiftWindow(\App\Models\Shift $shift, AttendanceStatus $type, \Carbon\Carbon $now): bool
+    {
+        $window = $this->getShiftTimeWindow($shift, $type, $now);
+        return $now->between($window['start'], $window['end']);
     }
 
     public function getActiveStaffCount(): int

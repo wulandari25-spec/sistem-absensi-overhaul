@@ -16,7 +16,7 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = $this->attendanceService->getTodayStats();
-        $recentLogs = $this->attendanceService->getRecentLogs(30);
+        $recentLogs = $this->attendanceService->getRecentLogs(5);
         $flaggedRecords = $this->attendanceService->getFlaggedRecords(10);
 
         return view('admin.dashboard', compact('stats', 'recentLogs', 'flaggedRecords'));
@@ -32,7 +32,7 @@ class DashboardController extends Controller
 
     public function getActivityLog(Request $request): JsonResponse
     {
-        $limit = $request->input('limit', 30);
+        $limit = $request->input('limit', 5);
         $logs = $this->attendanceService->getRecentLogs((int) $limit);
 
         return response()->json([

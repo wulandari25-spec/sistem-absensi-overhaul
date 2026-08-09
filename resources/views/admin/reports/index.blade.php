@@ -1,636 +1,462 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Presensi')
-@section('header', 'Laporan Kehadiran Karyawan')
+@section('title', 'Laporan Rekapitulasi Presensi')
+@section('header', 'Rekapitulasi Kehadiran Bulanan')
 
 @push('styles')
 <style>
-    .row-unselected {
-        opacity: 0.35;
-        background-color: rgba(241, 245, 249, 0.4) !important;
+    @page {
+        size: landscape;
+        margin: 5mm 6mm 5mm 6mm;
     }
-    .dark .row-unselected {
-        opacity: 0.25;
-        background-color: rgba(30, 41, 59, 0.2) !important;
+    @media print {
+        body { 
+            background: #ffffff !important; 
+            color: #000000 !important; 
+            font-family: Arial, Helvetica, sans-serif !important; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .no-print, aside, header, nav, form, .top-action-bar { 
+            display: none !important; 
+        }
+        .print-only { 
+            display: block !important; 
+        }
+        .max-w-7xl, .w-full { 
+            max-width: 100% !important; 
+            width: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+        [class*="lg:ml-"] { 
+            margin-left: 0 !important; 
+        }
+        main { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+        }
+        .rounded-3xl, .shadow-sm, .rounded-2xl { 
+            border-radius: 0 !important; 
+            box-shadow: none !important; 
+            border: none !important; 
+        }
+        .overflow-x-auto {
+            overflow: visible !important;
+        }
+        table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+            table-layout: fixed !important; 
+            font-size: 6.5pt !important;
+        }
+        th, td { 
+            border: 1px solid #334155 !important; 
+            padding: 1.5px 0.5px !important; 
+            text-align: center !important; 
+            color: #000000 !important; 
+            font-size: 6.5pt !important;
+            word-break: break-all;
+        }
+        th { 
+            background-color: #fed7aa !important; /* Amber-200 */
+            font-weight: bold !important; 
+            color: #000 !important;
+            padding: 2px 0.5px !important;
+        }
+        .th-sub {
+            background-color: #ffedd5 !important; /* Amber-100 */
+        }
+        .weekend-cell { 
+            background-color: #f1f5f9 !important; 
+            color: #b91c1c !important; 
+        }
+        td.staff-col { 
+            text-align: left !important; 
+            padding-left: 3px !important; 
+            overflow: hidden !important;
+        }
+        td.staff-col span {
+            display: block !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        .signature-section {
+            page-break-inside: avoid;
+        }
     }
 </style>
 @endpush
 
 @section('content')
-<div class="max-w-7xl mx-auto space-y-6" x-data="{ 
-    showFilters: true,
-    reportType: '{{ $reportType }}',
-    printMode: 'all',
-    tempPrintMode: 'all',
-    showPrintModal: false,
-    selectedLogs: [],
-    selectedDaily: [],
-    toggleAllLogs(checked) {
-        this.selectedLogs = [];
-        if (checked) {
-            const checkboxes = document.querySelectorAll('.log-row-checkbox');
-            checkboxes.forEach((cb, idx) => {
-                this.selectedLogs.push(idx);
-            });
-        }
-    },
-    toggleAllDaily(checked) {
-        this.selectedDaily = [];
-        if (checked) {
-            const checkboxes = document.querySelectorAll('.daily-row-checkbox');
-            checkboxes.forEach((cb, idx) => {
-                this.selectedDaily.push(idx);
-            });
-        }
-    },
-    updateLogSelection(idx, checked) {
-        if (checked) {
-            if (!this.selectedLogs.includes(idx)) this.selectedLogs.push(idx);
-        } else {
-            this.selectedLogs = this.selectedLogs.filter(i => i !== idx);
-        }
-    },
-    updateDailySelection(idx, checked) {
-        if (checked) {
-            if (!this.selectedDaily.includes(idx)) this.selectedDaily.push(idx);
-        } else {
-            this.selectedDaily = this.selectedDaily.filter(i => i !== idx);
-        }
-    }
-}">
+<div class="max-w-7xl mx-auto space-y-6">
     
+    {{-- Kop / Header Cetak Landscape (Hanya tampil saat Print) --}}
+    <div class="hidden print-only mb-3 border-b-2 border-slate-900 pb-2">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-base">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-sm font-extrabold tracking-tight uppercase text-slate-900 leading-tight">PT PLN (PERSERO)</h1>
+                    <h2 class="text-[11px] font-bold text-slate-700 tracking-wide">REKAPITULASI KEHADIRAN KARYAWAN OVERHAUL</h2>
+                </div>
+            </div>
+            <div class="text-right text-[9px] text-slate-600 space-y-0.5 font-medium">
+                <p><span class="font-bold">Bulan / Periode:</span> {{ $stats['month_name'] }}</p>
+                <p><span class="font-bold">Total Karyawan:</span> {{ count($allStaffs) }} Orang</p>
+                <p><span class="font-bold">Tanggal Cetak:</span> {{ now()->translatedFormat('d F Y, H:i') }} WIB</p>
+            </div>
+        </div>
+    </div>
+
     {{-- Alert Notification --}}
     @if(session('success'))
-        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm animate-fade-in-up no-print">
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm no-print">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <span>{{ session('success') }}</span>
         </div>
     @endif
     
-    {{-- Top Action Bar --}}
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Rekapitulasi Kehadiran</h2>
-            <p class="no-print text-xs text-slate-500 dark:text-slate-400 mt-1">Pantau, filter, dan unduh laporan aktivitas presensi karyawan overhaul</p>
-            
-            {{-- Subtitle khusus saat dicetak --}}
-            <div class="hidden print:block mt-1">
-                <p class="text-sm font-bold text-slate-700">
-                    @if($reportType === 'daily')
-                        Rekap Kehadiran Harian (Masuk & Pulang)
-                    @else
-                        Log Aktivitas Absensi
-                    @endif
-                    <span class="text-xs font-medium text-slate-500" :class="printMode === 'selected' ? '' : 'hidden'"> (Baris Terpilih)</span>
-                </p>
-                <p class="text-xs text-slate-500 mt-0.5">
-                    Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
-                </p>
+    {{-- Top Filter & Action Bar --}}
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 no-print">
+        <form method="GET" action="{{ route('admin.reports.index') }}" class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bulan</label>
+                <select name="month" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+                    @foreach([
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ] as $num => $name)
+                        <option value="{{ $num }}" {{ $month == $num ? 'selected' : '' }}>{{ $name }}</option>
+                    @endforeach
+                </select>
             </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            <button @click="showFilters = !showFilters" class="inline-flex items-center gap-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all h-[42px]">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                <span x-text="showFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'"></span>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tahun</label>
+                <select name="year" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+                    @foreach([2025, 2026, 2027] as $y)
+                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vendor (Instansi)</label>
+                <select name="institution" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+                    <option value="">Semua Vendor</option>
+                    @foreach ($institutions as $inst)
+                        <option value="{{ $inst }}" {{ request('institution') === $inst ? 'selected' : '' }}>{{ $inst }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cari Nama</label>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama / Kode..." class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all">
+                Terapkan
             </button>
-            <a href="{{ route('admin.reports.export', request()->query()) }}" class="no-print inline-flex items-center gap-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-sm font-bold shadow-md shadow-emerald-600/15 transition-all h-[42px]">
+        </form>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('admin.reports.export', request()->query()) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-sm font-bold shadow-md shadow-emerald-600/15 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Ekspor Excel
             </a>
-            <button @click="showPrintModal = true; tempPrintMode = (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) > 0 ? 'selected' : 'all'" class="inline-flex items-center gap-2 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all h-[42px]">
+            <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-brand-500/10 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Cetak Laporan
+                Cetak Rekap (Landscape)
             </button>
         </div>
     </div>
 
-    {{-- Stats Cards Group --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-            <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Absensi</p>
-            <p class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2">{{ $stats['total'] }}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Pada rentang tanggal terpilih</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-            <p class="text-xs font-bold text-emerald-500/80 uppercase tracking-wider">Check-In (Masuk)</p>
-            <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">{{ $stats['check_ins'] }}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Pegawai masuk area unit</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-            <p class="text-xs font-bold text-amber-500/80 uppercase tracking-wider">Check-Out (Keluar)</p>
-            <p class="text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">{{ $stats['check_outs'] }}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Pegawai meninggalkan unit</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-            <p class="text-xs font-bold text-rose-500/80 uppercase tracking-wider">Akses Mencurigakan</p>
-            <p class="text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-2">{{ $stats['flagged'] }}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Telah ditandai sistem (flagged)</p>
-        </div>
+    {{-- Keterangan Legenda Status --}}
+    <div class="flex flex-wrap gap-4 items-center px-2 no-print">
+        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Keterangan:</span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-100 dark:border-emerald-900">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            ✓ = Hadir
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-100 dark:border-amber-900">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            I = Izin
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            S = Sakit
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200 dark:border-slate-700">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            - = Alpa / Libur
+        </span>
     </div>
 
-    {{-- Filter Panel --}}
-    <div x-show="showFilters" class="no-print bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
-        <form method="GET" action="{{ route('admin.reports.index') }}" class="space-y-4">
-            <input type="hidden" name="report_type" value="{{ $reportType }}">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {{-- Filter Bulan --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Bulan (Filter Cepat)</label>
-                    <select name="month" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">-- Tanpa Filter Cepat --</option>
-                        @foreach([
-                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                        ] as $num => $name)
-                            <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Filter Tahun --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tahun</label>
-                    <select name="year" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">-- Pilih Tahun --</option>
-                        @foreach([2025, 2026, 2027] as $y)
-                            <option value="{{ $y }}" {{ request('year', 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Date Range --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tanggal Mulai</label>
-                    <input type="date" name="start_date" value="{{ request('start_date', $startDate) }}" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tanggal Selesai</label>
-                    <input type="date" name="end_date" value="{{ request('end_date', $endDate) }}" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                </div>
-                
-                {{-- Search --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nama / Kode Pegawai</label>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau OS-xxxx..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-brand-500">
-                </div>
+    {{-- 1. TABEL TAMPILAN LAYAR (DENGAN PAGINATION) --}}
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm no-print">
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <colgroup>
+                    <col style="width: 2.5%;">
+                    <col style="width: 15.5%;">
+                    @foreach ($daysList as $d)
+                        <col style="width: {{ 72.0 / $daysInMonth }}%;">
+                    @endforeach
+                    <col style="width: 2.5%;">
+                    <col style="width: 2.5%;">
+                    <col style="width: 2.5%;">
+                    <col style="width: 2.5%;">
+                </colgroup>
+                <thead>
+                    {{-- Row 1 Header: Header Bulan & Rentang Tanggal --}}
+                    <tr class="bg-amber-100 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/60 text-slate-800 dark:text-slate-200 font-bold">
+                        <th rowspan="2" class="px-1 py-1.5 text-center border-r border-amber-200 dark:border-amber-900/60 sticky left-0 bg-amber-100 dark:bg-slate-900 z-10">No</th>
+                        <th rowspan="2" class="px-2 py-1.5 border-r border-amber-200 dark:border-amber-900/60 sticky left-8 bg-amber-100 dark:bg-slate-900 z-10 staff-col">
+                            {{ $stats['month_name'] }}
+                        </th>
+                        <th colspan="{{ $daysInMonth }}" class="px-1 py-1 text-center border-r border-amber-200 dark:border-amber-900/60 uppercase tracking-wider text-[11px]">
+                            Tanggal
+                        </th>
+                        <th colspan="4" class="px-1 py-1 text-center text-slate-800 dark:text-slate-200 font-bold border-l border-amber-200 dark:border-amber-900/60 uppercase tracking-wider text-[9px]">
+                            Total
+                        </th>
+                    </tr>
 
-                {{-- Vendor (Institution) --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Perusahaan Vendor</label>
-                    <select name="institution" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">Semua Vendor</option>
-                        @foreach($institutions as $inst)
-                            <option value="{{ $inst }}" {{ request('institution') == $inst ? 'selected' : '' }}>{{ $inst }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Geofence Zone --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Zona Geofence</label>
-                    <select name="geofence_zone_id" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">Semua Zona</option>
-                        @foreach($zones as $z)
-                            <option value="{{ $z->id }}" {{ request('geofence_zone_id') == $z->id ? 'selected' : '' }}>{{ $z->zone_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Status --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Status Presensi</label>
-                    <select name="status" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">Semua</option>
-                        <option value="check_in" {{ request('status') == 'check_in' ? 'selected' : '' }}>Check-In (Masuk)</option>
-                        <option value="check_out" {{ request('status') == 'check_out' ? 'selected' : '' }}>Check-Out (Keluar)</option>
-                    </select>
-                </div>
-
-                {{-- Method --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Metode Verifikasi</label>
-                    <select name="method" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">Semua</option>
-                        <option value="face_recognition" {{ request('method') == 'face_recognition' ? 'selected' : '' }}>Face Recognition</option>
-                        <option value="qr_code" {{ request('method') == 'qr_code' ? 'selected' : '' }}>QR Code Fallback</option>
-                    </select>
-                </div>
-
-                {{-- Flagged --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Status Anomali</label>
-                    <select name="is_flagged" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500">
-                        <option value="">Semua</option>
-                        <option value="1" {{ request('is_flagged') === '1' ? 'selected' : '' }}>Hanya Akses Mencurigakan</option>
-                        <option value="0" {{ request('is_flagged') === '0' ? 'selected' : '' }}>Hanya Akses Aman</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <a href="{{ route('admin.reports.index', ['report_type' => $reportType]) }}" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all flex items-center justify-center">
-                    Reset Filter
-                </a>
-                <button type="submit" class="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 rounded-xl text-xs font-bold text-white shadow-md shadow-brand-500/10 transition-all">
-                    Terapkan Filter
-                </button>
-            </div>
-        </form>
-    </div>
-
-    {{-- Tab Switcher --}}
-    <div class="no-print print:hidden flex border-b border-slate-200 dark:border-slate-800 gap-2">
-        <a href="{{ request()->fullUrlWithQuery(['report_type' => 'log']) }}" class="px-5 py-3 text-sm font-bold border-b-2 {{ $reportType === 'log' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400' }} transition-all flex items-center gap-1.5">
-            <span>📝</span> Log Aktivitas Absensi
-        </a>
-        <a href="{{ request()->fullUrlWithQuery(['report_type' => 'daily']) }}" class="px-5 py-3 text-sm font-bold border-b-2 {{ $reportType === 'daily' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400' }} transition-all flex items-center gap-1.5">
-            <span>📅</span> Rekap Kehadiran Harian (Masuk & Pulang)
-        </a>
-    </div>
-
-    @if ($reportType === 'daily')
-        {{-- Rekap Kehadiran Harian Table --}}
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                            <th class="print:hidden px-4 py-4 w-12 text-center">
-                                <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllDaily($event.target.checked)">
+                    {{-- Row 2 Header: Angka Tanggal & Nama Hari & Sub-kolom Total --}}
+                    <tr class="bg-amber-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                        @foreach ($daysList as $d)
+                            <th class="p-0.5 text-center border-r border-slate-200 dark:border-slate-800 th-sub {{ $d['is_weekend'] ? 'weekend-cell bg-amber-100/60 dark:bg-amber-950/30 text-rose-600 dark:text-rose-400' : '' }}">
+                                <div class="text-[9.5px] font-bold leading-none">{{ $d['day'] }}</div>
+                                <div class="text-[7.5px] uppercase font-mono leading-none mt-0.5">{{ $d['day_name'] }}</div>
                             </th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jam Masuk</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jam Pulang</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durasi Kerja</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Lembur</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Verifikasi</th>
+                        @endforeach
+                        {{-- Sub-kolom Summary --}}
+                        <th class="p-0.5 text-center font-bold text-emerald-700 dark:text-emerald-400 border-r border-slate-200 dark:border-slate-800 th-sub" title="Total Hadir">H</th>
+                        <th class="p-0.5 text-center font-bold text-amber-700 dark:text-amber-400 border-r border-slate-200 dark:border-slate-800 th-sub" title="Total Izin">I</th>
+                        <th class="p-0.5 text-center font-bold text-rose-700 dark:text-rose-400 border-r border-slate-200 dark:border-slate-800 th-sub" title="Total Sakit">S</th>
+                        <th class="p-0.5 text-center font-bold text-slate-700 dark:text-slate-300 th-sub" title="Total Alpa">A</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    @forelse ($staffs as $staff)
+                        @php
+                            $totalHadir = 0;
+                            $totalIzin = 0;
+                            $totalSakit = 0;
+                            $totalAlpa = 0;
+                        @endphp
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/30 transition-colors">
+                            {{-- No --}}
+                            <td class="px-1 py-1.5 text-center text-slate-500 dark:text-slate-400 font-semibold border-r border-slate-200 dark:border-slate-800 sticky left-0 bg-white dark:bg-slate-900 z-10">
+                                {{ $loop->iteration + ($staffs->currentPage() - 1) * $staffs->perPage() }}
+                            </td>
+
+                            {{-- Nama & Kode Staf --}}
+                            <td class="px-2 py-1.5 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800 sticky left-8 bg-white dark:bg-slate-900 z-10 staff-col flex flex-col justify-center overflow-hidden">
+                                <span class="truncate">{{ $staff->name }}</span>
+                                <span class="text-[8.5px] font-mono text-slate-400 dark:text-slate-500 font-normal leading-none truncate">{{ $staff->staff_code }} • {{ $staff->institution ?? '-' }}</span>
+                            </td>
+
+                            {{-- Tanggal Cells --}}
+                            @foreach ($daysList as $d)
+                                @php
+                                    $cellDate = $d['date'];
+                                    $isWithinContract = $staff->isWithinContract($cellDate);
+                                    $key = $staff->id . '_' . $d['day'];
+                                    $dayLogs = $attendances->get($key, collect());
+                                    
+                                    $isHadir = $dayLogs->contains('status', \App\Enums\AttendanceStatus::CHECK_IN) || $dayLogs->contains('status', \App\Enums\AttendanceStatus::CHECK_OUT);
+                                    $isIzin = $dayLogs->contains('status', \App\Enums\AttendanceStatus::PERMIT);
+                                    $isSakit = $dayLogs->contains('status', \App\Enums\AttendanceStatus::SICK);
+                                    
+                                    if ($isHadir) {
+                                        $totalHadir++;
+                                    } elseif ($isIzin) {
+                                        $totalIzin++;
+                                    } elseif ($isSakit) {
+                                        $totalSakit++;
+                                    } elseif ($isWithinContract && !$d['is_weekend']) {
+                                        $totalAlpa++;
+                                    }
+                                @endphp
+                                <td class="p-0.5 text-center border-r border-slate-100 dark:border-slate-800/50 {{ $d['is_weekend'] ? 'weekend-cell bg-slate-50/50 dark:bg-slate-950/20' : '' }} {{ (!$isHadir && !$isIzin && !$isSakit && !$isWithinContract) ? 'bg-slate-100/50 dark:bg-slate-950/40 text-slate-300 dark:text-slate-700' : '' }}">
+                                    @if ($isHadir)
+                                        <span class="inline-flex w-4 h-4 items-center justify-center rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-black text-[10px]" title="Hadir">
+                                            ✓
+                                        </span>
+                                    @elseif ($isIzin)
+                                        <span class="inline-flex w-4 h-4 items-center justify-center rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold text-[8.5px]" title="Izin">
+                                            I
+                                        </span>
+                                    @elseif ($isSakit)
+                                        <span class="inline-flex w-4 h-4 items-center justify-center rounded bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-[8.5px]" title="Sakit">
+                                            S
+                                        </span>
+                                    @elseif (!$isWithinContract)
+                                        <span class="text-slate-300 dark:text-slate-700" title="Di luar masa kontrak">-</span>
+                                    @else
+                                        <span class="text-slate-300 dark:text-slate-700">-</span>
+                                    @endif
+                                </td>
+                            @endforeach
+
+                            {{-- Summary Numbers --}}
+                            <td class="p-0.5 text-center font-bold text-emerald-700 dark:text-emerald-400 border-r border-slate-100 dark:border-slate-800 text-[10px]">
+                                {{ $totalHadir }}
+                            </td>
+                            <td class="p-0.5 text-center font-bold text-amber-700 dark:text-amber-400 border-r border-slate-100 dark:border-slate-800 text-[10px]">
+                                {{ $totalIzin }}
+                            </td>
+                            <td class="p-0.5 text-center font-bold text-rose-700 dark:text-rose-400 border-r border-slate-100 dark:border-slate-800 text-[10px]">
+                                {{ $totalSakit }}
+                            </td>
+                            <td class="p-0.5 text-center font-bold text-slate-600 dark:text-slate-400 text-[10px]">
+                                {{ $totalAlpa }}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        @forelse ($dailySummary as $row)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}), 'print:hidden': printMode === 'selected' && !selectedDaily.includes({{ $loop->index }}) }">
-                                <td class="print:hidden px-4 py-4 w-12 text-center">
-                                    <input type="checkbox" class="daily-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedDaily.includes({{ $loop->index }})" @change="updateDailySelection({{ $loop->index }}, $event.target.checked)">
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                        {{ \Carbon\Carbon::parse($row['date'])->translatedFormat('d M Y') }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
-                                            {{ strtoupper(substr($row['staff']->name ?? '?', 0, 1)) }}
-                                        </div>
-                                        <div>
-                                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $row['staff']->name ?? '-' }}</span>
-                                            <span class="block text-xs font-mono text-slate-400 dark:text-slate-500">{{ $row['staff']->staff_code ?? '-' }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                    {{ $row['staff']->institution ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                                    {{ $row['check_in'] }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-600 dark:text-amber-400">
-                                    {{ $row['check_out'] }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-semibold">
-                                    {{ $row['duration'] }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
-                                    @if($row['overtime'] !== '-')
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-900">
-                                            ⏱️ {{ $row['overtime'] }}
-                                        </span>
-                                    @else
-                                        <span class="text-slate-300 dark:text-slate-700 font-semibold">-</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    @if($row['is_flagged'])
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900">
-                                            ⚠️ Anomali
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
-                                            ✅ Aman
-                                        </span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="px-6 py-12 text-center">
-                                    <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
-                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data rekapitulasi harian ditemukan</p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            @if ($dailySummary->hasPages())
-                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
-                    {{ $dailySummary->links() }}
-                </div>
-            @endif
-        </div>
-    @else
-        {{-- Main Reports Table (Log Aktivitas) --}}
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                            <th class="print:hidden px-4 py-4 w-12 text-center">
-                                <input type="checkbox" class="rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" @change="toggleAllLogs($event.target.checked)">
-                            </th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Waktu</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Karyawan</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vendor</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Zona Kerja</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metode</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Koordinat</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Verifikasi</th>
+                    @empty
+                        <tr>
+                            <td colspan="{{ $daysInMonth + 6 }}" class="px-6 py-12 text-center text-slate-500">
+                                <div class="text-2xl mb-2">📭</div>
+                                <p class="text-sm font-semibold">Tidak ada data karyawan ditemukan.</p>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        @forelse ($attendances as $att)
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors" :class="{ 'row-unselected': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}), 'print:hidden': printMode === 'selected' && !selectedLogs.includes({{ $loop->index }}) }">
-                                <td class="print:hidden px-4 py-4 w-12 text-center">
-                                    <input type="checkbox" class="log-row-checkbox rounded border-slate-300 dark:border-slate-750 text-brand-500 focus:ring-brand-500/20" :checked="selectedLogs.includes({{ $loop->index }})" @change="updateLogSelection({{ $loop->index }}, $event.target.checked)">
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                        {{ $att->checked_at->format('H:i:s') }}
-                                    </span>
-                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                        {{ $att->checked_at->translatedFormat('d M Y') }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
-                                            {{ strtoupper(substr($att->staff->name ?? '?', 0, 1)) }}
-                                        </div>
-                                        <div>
-                                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $att->staff->name ?? '-' }}</span>
-                                            <span class="block text-xs font-mono text-slate-400 dark:text-slate-500">{{ $att->staff->staff_code ?? '-' }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                    {{ $att->staff->institution ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 font-medium">
-                                    {{ $att->geofenceZone->zone_name ?? 'Luar Geofence' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                    <span class="inline-flex items-center gap-1">
-                                        <span>{{ $att->method->icon() }}</span>
-                                        <span class="text-xs">{{ $att->method->label() }}</span>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-{{ $att->status->color() }}-50 dark:bg-{{ $att->status->color() }}-950/30 text-{{ $att->status->color() }}-700 dark:text-{{ $att->status->color() }}-400 border border-{{ $att->status->color() }}-100 dark:border-{{ $att->status->color() }}-900">
-                                        {{ $att->status->label() }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-500 dark:text-slate-400">
-                                    @if($att->latitude && $att->longitude)
-                                        <a href="https://maps.google.com/?q={{ $att->latitude }},{{ $att->longitude }}" target="_blank" class="hover:underline hover:text-brand-500 flex items-center gap-1">
-                                            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                            {{ number_format($att->latitude, 5) }}, {{ number_format($att->longitude, 5) }}
-                                        </a>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    @if($att->is_flagged)
-                                        @if($att->verified_by)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800" title="Ditolak oleh {{ $att->verifier->name ?? 'Admin' }}: {{ $att->flag_reason }}">
-                                                ❌ Ditolak ({{ $att->verifier->name ?? 'Admin' }})
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900" title="{{ $att->flag_reason }}">
-                                                ⚠️ Mencurigakan
-                                            </span>
-                                            @if(auth()->user()->isAdmin())
-                                                <div class="flex items-center justify-end gap-1.5 mt-1.5 print:hidden">
-                                                    <form action="{{ route('admin.attendances.verify', $att) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <input type="hidden" name="action" value="approve">
-                                                        <button type="submit" onclick="return confirm('Setujui presensi ini sebagai Aman?')" class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 hover:text-emerald-700 transition-colors" title="Setujui (Aman)">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                        </button>
-                                                    </form>
-                                                    <form action="{{ route('admin.attendances.verify', $att) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <input type="hidden" name="action" value="reject">
-                                                        <button type="submit" onclick="return confirm('Tolak presensi ini? Status akan tetap ditandai sebagai Anomali.')" class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 hover:text-rose-700 transition-colors" title="Tolak Presensi">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    @else
-                                        @if($att->verified_by)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Disetujui oleh {{ $att->verifier->name ?? 'Admin' }}">
-                                                ✅ Disetujui ({{ $att->verifier->name ?? 'Admin' }})
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
-                                                ✅ Aman
-                                            </span>
-                                        @endif
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="px-6 py-12 text-center">
-                                    <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><span class="text-2xl">📭</span></div>
-                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada data presensi ditemukan</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Coba sesuaikan filter atau rentang tanggal Anda.</p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            @if ($attendances->hasPages())
-                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
-                    {{ $attendances->links() }}
-                </div>
-            @endif
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    @endif
-    {{-- Print Scope Selection Modal --}}
-    <div x-show="showPrintModal" class="no-print fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-transition.opacity x-cloak>
-        <div @click.away="showPrintModal = false" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-xl animate-fade-in-up" x-transition.scale>
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                    🖨️ Cakupan Cetak Laporan
-                </h3>
-                <button @click="showPrintModal = false" class="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+        
+        {{-- Pagination --}}
+        @if ($staffs->hasPages())
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800 no-print">
+                {{ $staffs->links() }}
             </div>
+        @endif
+    </div>
 
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-                Silakan tentukan cakupan baris absensi yang ingin dicetak ke dalam laporan.
-            </p>
+    {{-- 2. TABEL KHUSUS CETAK PRINT (MEMUAT SELURUH DATA KARYAWAN TANPA TERPOTONG PAGINASI) --}}
+    <div class="hidden print-only">
+        <table class="w-full border-collapse text-left">
+            <colgroup>
+                <col style="width: 2.5%;">
+                <col style="width: 15.5%;">
+                @foreach ($daysList as $d)
+                    <col style="width: {{ 72.0 / $daysInMonth }}%;">
+                @endforeach
+                <col style="width: 2.5%;">
+                <col style="width: 2.5%;">
+                <col style="width: 2.5%;">
+                <col style="width: 2.5%;">
+            </colgroup>
+            <thead>
+                <tr class="bg-amber-100 font-bold">
+                    <th rowspan="2">No</th>
+                    <th rowspan="2" class="staff-col">{{ $stats['month_name'] }}</th>
+                    <th colspan="{{ $daysInMonth }}" class="uppercase tracking-wider">Tanggal</th>
+                    <th colspan="4" class="uppercase tracking-wider">Total</th>
+                </tr>
+                <tr class="bg-amber-50 font-semibold">
+                    @foreach ($daysList as $d)
+                        <th class="th-sub {{ $d['is_weekend'] ? 'weekend-cell' : '' }}">
+                            <div>{{ $d['day'] }}</div>
+                            <div style="font-size: 6pt;">{{ $d['day_name'] }}</div>
+                        </th>
+                    @endforeach
+                    <th class="th-sub">H</th>
+                    <th class="th-sub">I</th>
+                    <th class="th-sub">S</th>
+                    <th class="th-sub">A</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($allStaffs as $staff)
+                    @php
+                        $totalHadir = 0;
+                        $totalIzin = 0;
+                        $totalSakit = 0;
+                        $totalAlpa = 0;
+                    @endphp
+                    <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td class="staff-col">
+                            <span>{{ $staff->name }}</span>
+                            <span style="font-size: 5.5pt; color: #555;">{{ $staff->staff_code }} • {{ $staff->institution ?? '-' }}</span>
+                        </td>
+                        @foreach ($daysList as $d)
+                            @php
+                                $cellDate = $d['date'];
+                                $isWithinContract = $staff->isWithinContract($cellDate);
+                                $key = $staff->id . '_' . $d['day'];
+                                $dayLogs = $attendances->get($key, collect());
+                                
+                                $isHadir = $dayLogs->contains('status', \App\Enums\AttendanceStatus::CHECK_IN) || $dayLogs->contains('status', \App\Enums\AttendanceStatus::CHECK_OUT);
+                                $isIzin = $dayLogs->contains('status', \App\Enums\AttendanceStatus::PERMIT);
+                                $isSakit = $dayLogs->contains('status', \App\Enums\AttendanceStatus::SICK);
+                                
+                                if ($isHadir) {
+                                    $totalHadir++;
+                                } elseif ($isIzin) {
+                                    $totalIzin++;
+                                } elseif ($isSakit) {
+                                    $totalSakit++;
+                                } elseif ($isWithinContract && !$d['is_weekend']) {
+                                    $totalAlpa++;
+                                }
+                            @endphp
+                            <td class="{{ $d['is_weekend'] ? 'weekend-cell' : '' }}">
+                                @if ($isHadir)
+                                    <b>✓</b>
+                                @elseif ($isIzin)
+                                    <b>I</b>
+                                @elseif ($isSakit)
+                                    <b>S</b>
+                                @elseif (!$isWithinContract)
+                                    -
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        @endforeach
+                        <td><b>{{ $totalHadir }}</b></td>
+                        <td>{{ $totalIzin }}</td>
+                        <td>{{ $totalSakit }}</td>
+                        <td>{{ $totalAlpa }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-            <div class="space-y-3">
-                {{-- Option 1: Print All --}}
-                <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all"
-                       :class="tempPrintMode === 'all' ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'">
-                    <input type="radio" name="print_scope" value="all" x-model="tempPrintMode" class="mt-1 text-brand-500 focus:ring-brand-500/20 border-slate-300 dark:border-slate-700">
-                    <div>
-                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Semua Data Kehadiran ({{ $stats['total'] }} total absensi)</span>
-                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-1">Cetak seluruh data absensi (atau seluruh data terfilter) secara lengkap tanpa batasan halaman.</span>
-                    </div>
-                </label>
-
-                {{-- Option 2: Print Selected --}}
-                <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all"
-                       :class="[
-                           (reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0 ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800' : 
-                           (tempPrintMode === 'selected' ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40')
-                       ]">
-                    <input type="radio" name="print_scope" value="selected" x-model="tempPrintMode"
-                           :disabled="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) === 0"
-                           class="mt-1 text-brand-500 focus:ring-brand-500/20 border-slate-300 dark:border-slate-700 disabled:opacity-50">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Hanya Baris Terpilih</span>
-                            <span class="text-[10px] font-extrabold text-brand-600 px-2 py-0.5 bg-brand-50 dark:bg-brand-950/40 rounded-lg"
-                                  x-text="(reportType === 'daily' ? selectedDaily.length : selectedLogs.length) + ' terpilih'"></span>
-                        </div>
-                        <span class="block text-xs text-slate-400 dark:text-slate-500 mt-1">Hanya mencetak data yang Anda centang pada tabel di halaman aktif saat ini.</span>
-                    </div>
-                </label>
+    {{-- Tanda Tangan Mengetahui (Hanya tampil saat Print) --}}
+    <div class="hidden print-only signature-section mt-6 pt-3">
+        <div class="grid grid-cols-3 text-center text-[9px] text-slate-900 font-medium">
+            <div>
+                <p>Dibuat Oleh,</p>
+                <p class="font-bold uppercase mt-0.5">Petugas Pengawas Absensi</p>
+                <div class="h-12"></div>
+                <p class="font-bold underline">( {{ auth()->user()->name ?? 'Administrator' }} )</p>
+                <p class="text-[8px] text-slate-500">Security & Administration</p>
             </div>
-
-            <div class="flex justify-end gap-2 mt-6">
-                <button @click="showPrintModal = false" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all">
-                    Batal
-                </button>
-                <button @click="
-                    showPrintModal = false;
-                    printMode = tempPrintMode;
-                    if (printMode === 'all') {
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('print', 'all');
-                        window.open('{{ route('admin.reports.index') }}?' + params.toString(), '_blank');
-                    } else {
-                        $nextTick(() => { window.print(); });
-                    }
-                " class="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 rounded-xl text-xs font-bold text-white shadow-md shadow-brand-500/10 transition-all">
-                    Mulai Cetak
-                </button>
+            <div>
+                <p>Diperiksa Oleh,</p>
+                <p class="font-bold uppercase mt-0.5">Team Leader K3 & Kam</p>
+                <div class="h-12"></div>
+                <p class="font-bold underline">( ............................................ )</p>
+                <p class="text-[8px] text-slate-500">K3 & Lingkungan</p>
+            </div>
+            <div>
+                <p>Disetujui Oleh,</p>
+                <p class="font-bold uppercase mt-0.5">Manager Bagian Overhaul</p>
+                <div class="h-12"></div>
+                <p class="font-bold underline">( ............................................ )</p>
+                <p class="text-[8px] text-slate-500">Leader Management Overhaul</p>
             </div>
         </div>
     </div>
+
 </div>
-
-{{-- Print Styles --}}
-@if(request()->has('print'))
-@push('styles')
-<style media="print">
-    @media print {
-        /* Reset tubuh halaman */
-        body { background: #fff !important; color: #000 !important; font-family: Arial, sans-serif !important; }
-        button, form, nav, .top-action-bar, .no-print { display: none !important; }
-        
-        /* Maksimalkan lebar cetak */
-        .max-w-7xl { max-w: 100% !important; }
-        [class*="lg:ml-"] { margin-left: 0 !important; }
-        main { padding: 0 !important; }
-        
-        /* Sembunyikan kartu statistik atas saat cetak agar murni tabel */
-        .grid { display: none !important; }
-        
-        /* Hilangkan bayangan & border melengkung modern */
-        .rounded-3xl, .shadow-sm, .rounded-full, .rounded-xl, .rounded-lg { border-radius: 0 !important; box-shadow: none !important; }
-        
-        /* Atur tabel mirip cetakan Excel */
-        table { 
-            width: 100% !important; 
-            border-collapse: collapse !important; 
-            margin-top: 15px !important; 
-            background: #fff !important;
-            table-layout: auto !important;
-        }
-        
-        th, td { 
-            border: 1px solid #000 !important; 
-            padding: 4px 6px !important; 
-            font-size: 9px !important; 
-            color: #000 !important;
-            background: #fff !important;
-            text-align: left !important;
-            white-space: normal !important;
-            word-break: break-word !important;
-        }
-        
-        th { 
-            background-color: #f2f2f2 !important; 
-            font-weight: bold !important;
-            text-transform: uppercase !important;
-        }
-        
-        /* Hilangkan avatar inisial bulat & icon Maps/Metode */
-        table .w-8.h-8, svg, .animate-pulse { display: none !important; }
-        
-        /* Buat semua badge status & metode menjadi teks biasa (hilangkan latar pill hijau/merah) */
-        .inline-flex, 
-        span[class*="bg-"], 
-        span[class*="text-"], 
-        td span {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #000 !important;
-            font-weight: normal !important;
-            font-size: 11px !important;
-        }
-        
-        .font-bold, .font-semibold, td span.font-bold, td span.font-semibold {
-            font-weight: bold !important;
-            color: #000 !important;
-        }
-        
-        /* Sederhanakan kontainer nama & kode */
-        .flex { display: block !important; }
-        .items-center { align-items: stretch !important; }
-        .gap-3 { gap: 0 !important; }
-        a { text-decoration: none !important; color: #000 !important; }
-    }
-</style>
-@endpush
-@push('scripts')
-<script>
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            window.print();
-            window.addEventListener('afterprint', () => {
-                window.close();
-            });
-        }, 1500);
-    });
-</script>
-@endpush
-@endif
-
 @endsection

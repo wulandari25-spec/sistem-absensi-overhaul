@@ -88,8 +88,8 @@
                 </div>
 
                 <div class="flex items-center gap-3 py-2 border-t border-slate-100 dark:border-slate-800/80">
-                    <input type="checkbox" name="is_active" id="is_active" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300" {{ old('is_active', $geofence->is_active) ? 'checked' : '' }}>
-                    <label for="is_active" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Aktifkan Zona</label>
+                    <input type="checkbox" name="is_active" id="is_active" value="1" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300" {{ old('is_active', $geofence->is_active) ? 'checked' : '' }}>
+                    <label for="is_active" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Aktifkan Zona Secara Instan</label>
                 </div>
 
                 <div class="flex justify-end pt-3">
@@ -113,13 +113,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const initLat = {{ $geofence->center_lat ?? -7.7145 }};
     const initLng = {{ $geofence->center_lng ?? 113.5850 }};
     
-    // Initialize map
-    const map = L.map('map').setView([initLat, initLng], 15);
+    // Google Satellite Hybrid layer (Satelit + Footprint Gedung & Jalan)
+    const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps',
+        maxZoom: 20
+    });
     
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    const osmRoads = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    });
+
+    // Initialize map with Google Hybrid Satellite as default view
+    const map = L.map('map', {
+        center: [initLat, initLng],
+        zoom: 17,
+        layers: [googleHybrid]
+    });
+
+    // Control layer switcher
+    L.control.layers({
+        '🛰️ Satelit & Gedung (Google)': googleHybrid,
+        '🗺️ Peta Jalan (OSM)': osmRoads
+    }, null, { position: 'topright' }).addTo(map);
 
     let polygon = null;
     let polygonPoints = {!! json_encode($geofence->coordinates ?? []) !!};
@@ -139,9 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (polygonPoints.length >= 2) {
             polygon = L.polygon(polygonPoints, {
-                color: '#4318ff',
-                fillColor: '#4318ff',
-                fillOpacity: 0.2
+                color: '#2563eb',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.35,
+                weight: 3
             }).addTo(map);
         }
     }
@@ -163,12 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to add a single marker and attach drag listeners
     function addMarker(lat, lng, index) {
-        const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        const marker = L.marker([lat, lng], { 
+            draggable: true,
+            title: `Titik Gedung #${index + 1}`
+        }).addTo(map);
+
+        marker.bindTooltip(`🏢 <b>Titik Gedung #${index + 1}</b><br><span style="font-family:monospace">${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`, {
+            permanent: false,
+            direction: 'top'
+        });
+
         markers.push(marker);
 
         marker.on('drag', () => {
             const pos = marker.getLatLng();
             polygonPoints[index] = { lat: pos.lat, lng: pos.lng };
+            marker.setTooltipContent(`🏢 <b>Titik Gedung #${index + 1}</b><br><span style="font-family:monospace">${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}</span>`);
             drawPolygon();
             updateInputs();
         });
@@ -179,18 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
         polygonPoints.forEach((point, i) => {
             const lat = parseFloat(point.lat || point.latitude);
             const lng = parseFloat(point.lng || point.longitude);
-            // Re-normalize key name to lat/lng
-            polygonPoints[i] = { lat: lat, lng: lng };
-            addMarker(lat, lng, i);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                polygonPoints[i] = { lat: lat, lng: lng };
+                addMarker(lat, lng, i);
+            }
         });
-
         drawPolygon();
         updateInputs();
-
-        // Fit map bounds to show existing polygon
-        if (polygon) {
-            map.fitBounds(polygon.getBounds());
-        }
     }
 
     // Map click handler to add new vertices

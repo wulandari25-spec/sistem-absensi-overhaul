@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'flask' => [
+        'url' => env('FLASK_FACE_URL', 'http://127.0.0.1:5001'),
+    ],
+
 ];

@@ -16,9 +16,12 @@ return new class extends Migration
             $table->string('department')->nullable()->comment('Unit kerja/departemen');
             $table->string('position')->nullable()->comment('Jabatan/posisi');
             $table->json('face_descriptor')->nullable()->comment('Float32Array 128-dimension face vector');
+            $table->boolean('is_face_registered')->default(false)->comment('Status pendaftaran wajah');
             $table->string('photo_profile')->nullable()->comment('Path foto profil');
             $table->string('phone', 20)->nullable();
             $table->string('id_number', 30)->nullable()->comment('NIK/No. KTP');
+            $table->date('contract_start_date')->nullable();
+            $table->date('contract_end_date')->nullable();
             $table->string('password')->nullable()->comment('Kata sandi login karyawan');
             $table->boolean('is_active_onsite')->default(false)->comment('Apakah saat ini berada di dalam area');
             $table->timestamp('last_seen_at')->nullable()->comment('Terakhir terdeteksi sistem');

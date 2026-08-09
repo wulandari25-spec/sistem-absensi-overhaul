@@ -7,9 +7,6 @@
     {{-- Header --}}
     <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-lg border-b border-slate-800/80 px-4 py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="{{ route('attendance.check-in') }}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-slate-300">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            </a>
             <div>
                 <h1 class="text-sm font-bold tracking-tight">Riwayat Presensi</h1>
                 <p class="text-[10px] text-slate-400">Periode Mingguan</p>
@@ -46,12 +43,8 @@
             </div>
         </div>
 
-        {{-- Action Buttons --}}
         <div class="flex gap-3">
-            <a href="{{ route('attendance.check-in') }}" class="flex-1 py-3 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-200 text-xs font-bold text-center transition-colors">
-                🏠 Portal Absensi
-            </a>
-            <a href="{{ route('attendance.permit') }}" class="flex-1 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 text-xs font-bold text-center transition-colors">
+            <a href="{{ route('attendance.permit') }}" class="flex-1 py-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 text-sm font-bold text-center transition-colors">
                 📝 Ajukan Izin / Sakit
             </a>
         </div>
@@ -63,6 +56,9 @@
             <div class="bg-white p-2.5 rounded-2xl shadow-inner mb-3">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ $staff->staff_code }}" alt="QR Code {{ $staff->name }}" class="w-32 h-32">
             </div>
+            <button onclick="downloadQrCode()" class="mb-3 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold transition-all border border-slate-700 hover:border-slate-600 flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95">
+                📥 Unduh QR Code
+            </button>
             <p class="text-[10px] text-slate-400 font-medium leading-relaxed max-w-[240px]">
                 Tunjukkan QR Code ini ke scanner petugas di gerbang masuk/keluar untuk melakukan absensi cepat.
             </p>
@@ -197,9 +193,37 @@
 
     {{-- Bottom Action Button --}}
     <div class="sticky bottom-0 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900 p-4 max-w-md mx-auto w-full">
-        <a href="{{ route('attendance.check-in') }}" class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-            <span>📷 Kembali ke Scanner Presensi</span>
-        </a>
+        <form action="{{ route('employee.logout') }}" method="POST" class="m-0 w-full">
+            @csrf
+            <button type="submit" class="w-full py-4 rounded-2xl bg-slate-800 hover:bg-rose-500/15 hover:text-rose-400 border border-slate-700 hover:border-rose-500/20 text-slate-350 font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2">
+                <span>Keluar Sesi / Logout 🚪</span>
+            </button>
+        </form>
     </div>
 </div>
+
+<script>
+function downloadQrCode() {
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ $staff->staff_code }}";
+    const filename = "QR_Code_{{ str_replace(' ', '_', $staff->name) }}.png";
+    
+    fetch(qrUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+        })
+        .catch(err => {
+            console.error("Gagal mengunduh QR Code:", err);
+            // Fallback
+            window.open(qrUrl, '_blank');
+        });
+}
+</script>
 @endsection

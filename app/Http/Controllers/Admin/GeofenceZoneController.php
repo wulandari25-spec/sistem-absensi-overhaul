@@ -45,6 +45,11 @@ class GeofenceZoneController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
+        // Convert checkbox to boolean before validation
+        $request->merge([
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
         // Decode coordinates and compute center_lat and center_lng
         if ($request->filled('coordinates')) {
             $coords = json_decode($request->input('coordinates'), true);
@@ -82,7 +87,6 @@ class GeofenceZoneController extends Controller implements HasMiddleware
         }
 
         $validated['coordinates'] = $coords;
-        $validated['is_active'] = $request->has('is_active');
 
         GeofenceZone::create($validated);
 
@@ -102,6 +106,11 @@ class GeofenceZoneController extends Controller implements HasMiddleware
      */
     public function update(Request $request, GeofenceZone $geofence)
     {
+        // Convert checkbox to boolean before validation
+        $request->merge([
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
         // Decode coordinates and compute center_lat and center_lng
         if ($request->filled('coordinates')) {
             $coords = json_decode($request->input('coordinates'), true);
@@ -139,7 +148,6 @@ class GeofenceZoneController extends Controller implements HasMiddleware
         }
 
         $validated['coordinates'] = $coords;
-        $validated['is_active'] = $request->has('is_active');
 
         $geofence->update($validated);
 

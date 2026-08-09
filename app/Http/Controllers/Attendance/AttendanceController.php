@@ -20,9 +20,9 @@ class AttendanceController extends Controller
         private FaceMatchingService $faceMatchingService,
     ) {}
 
-    public function showCheckIn()
+    public function showAdminScan()
     {
-        return view('attendance.check-in');
+        return view('admin.daily-attendance.scan');
     }
 
     public function processHybridAttendance(Request $request): JsonResponse
@@ -30,70 +30,71 @@ class AttendanceController extends Controller
         $request->validate([
             'staff_id' => 'nullable|integer|exists:outsourcing_staffs,id',
             'method' => 'required|in:face_recognition,qr_code',
-            'status' => 'required|in:check_in,check_out',
+            'status' => 'nullable|in:check_in,check_out',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'face_descriptor' => 'required_if:method,face_recognition|array',
-            'proof_photo' => 'nullable|string',
+            'proof_photo' => 'required_if:method,face_recognition|nullable|string',
             'confidence_score' => 'nullable|numeric',
             'qr_token' => 'nullable|string',
             'scanned_code' => 'nullable|string',
         ]);
 
         $method = AttendanceMethod::from($request->input('method'));
-        $status = AttendanceStatus::from($request->input('status'));
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
         $deviceInfo = $request->userAgent();
 
         $staffId = null;
+        $proofPhotoPath = null;
+        $confidenceScore = $request->input('confidence_score') ? (float) $request->input('confidence_score') : null;
 
         if ($method === AttendanceMethod::FACE_RECOGNITION) {
-            $descriptor = $request->input('face_descriptor');
-            $result = $this->faceMatchingService->findBestMatch($descriptor);
+            $photoBase64 = $request->input('proof_photo');
+            $result = $this->faceMatchingService->findBestMatch($photoBase64);
 
             if (!$result['matched']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Verifikasi wajah gagal saat proses akhir. Silakan ulangi.',
+                    'message' => $result['message'] ?? 'Verifikasi wajah gagal saat proses akhir. Silakan ulangi.',
                 ], 422);
             }
 
-            // Keamanan Ganda: Pastikan wajah yang di-scan cocok dengan karyawan yang sedang login
-            $loggedInStaffId = session('logged_in_staff_id');
-            if ($loggedInStaffId && $result['staff']->id != $loggedInStaffId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Deteksi wajah gagal: Wajah tidak cocok dengan akun login (' . session('logged_in_staff_name') . ').',
-                ], 422);
-            }
-
-            // staff_id ditentukan oleh SERVER hasil pencocokan wajah,
-            // bukan dipercaya dari input client.
             $staffId = $result['staff']->id;
-        } elseif ($method === AttendanceMethod::QR_CODE) {
-            // Cek apakah karyawan sedang login sesi
-            $loggedInStaffId = session('logged_in_staff_id');
-            $loggedInStaffCode = session('logged_in_staff_code');
+            $confidenceScore = $result['confidence'] ?? null;
 
-            if ($loggedInStaffId) {
-                $scannedCode = $request->input('scanned_code');
-                $expectedCode = $loggedInStaffCode ?: (\App\Models\OutsourcingStaff::find($loggedInStaffId)?->staff_code);
-                
-                if (trim($scannedCode) !== trim($expectedCode)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Absensi QR Gagal: QR Code yang di-scan tidak sesuai dengan akun Anda.',
-                    ], 422);
+            // Simpan foto absen ke local storage
+            try {
+                if (preg_match('/^data:image\/(\w+);base64,/', $photoBase64, $typeMatches)) {
+                    $fileData = substr($photoBase64, strpos($photoBase64, ',') + 1);
+                    $ext = strtolower($typeMatches[1]);
+                    if ($ext === 'jpg') $ext = 'jpeg';
+                    
+                    if (in_array($ext, ['jpeg', 'png', 'webp'])) {
+                        $decoded = base64_decode($fileData);
+                        if ($decoded !== false) {
+                            $proofPhotoPath = 'attendance-photos/' . uniqid() . '.' . $ext;
+                            \Illuminate\Support\Facades\Storage::disk('local')->put($proofPhotoPath, $decoded);
+                        }
+                    }
                 }
-                $staffId = $loggedInStaffId;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Gagal menyimpan foto absensi: " . $e->getMessage());
+            }
+        } elseif ($method === AttendanceMethod::QR_CODE) {
+            $qrInput = $request->input('qr_token');
+            
+            // 1. Cek apakah ini static staff_code (kartu cetak)
+            $staff = OutsourcingStaff::where('staff_code', trim($qrInput))->first();
+            
+            if ($staff) {
+                $staffId = $staff->id;
             } else {
-                // Fallback: Model QR Code dinamis berbasis token
-                $qrToken = $this->qrTokenService->validateToken($request->input('qr_token'));
+                // 2. Fallback ke dynamic token
+                $qrToken = $this->qrTokenService->validateToken($qrInput);
                 if (!$qrToken) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Token QR Code tidak valid atau sudah kedaluwarsa.',
+                        'message' => 'QR Code atau Token tidak valid / tidak ditemukan.',
                     ], 422);
                 }
                 $staffId = $qrToken->staff_id;
@@ -101,14 +102,19 @@ class AttendanceController extends Controller
             }
         }
 
+        $staff = OutsourcingStaff::findOrFail($staffId);
+        
+        // DETEKSI STATUS OTOMATIS: jika sudah check-in (onsite), maka check-out. Jika belum, check-in.
+        $status = $staff->is_active_onsite ? AttendanceStatus::CHECK_OUT : AttendanceStatus::CHECK_IN;
+
         if ($status === AttendanceStatus::CHECK_IN) {
             $result = $this->attendanceService->processCheckIn(
                 staffId: $staffId,
                 method: $method,
                 lat: $lat,
                 lng: $lng,
-                proofPhoto: $request->input('proof_photo'),
-                confidenceScore: $request->input('confidence_score') ? (float) $request->input('confidence_score') : null,
+                proofPhoto: $proofPhotoPath,
+                confidenceScore: $confidenceScore,
                 deviceInfo: $deviceInfo,
             );
         } else {
@@ -117,18 +123,38 @@ class AttendanceController extends Controller
                 method: $method,
                 lat: $lat,
                 lng: $lng,
-                proofPhoto: $request->input('proof_photo'),
-                confidenceScore: $request->input('confidence_score') ? (float) $request->input('confidence_score') : null,
+                proofPhoto: $proofPhotoPath,
+                confidenceScore: $confidenceScore,
                 deviceInfo: $deviceInfo,
             );
         }
 
-        return response()->json($result, $result['success'] ? 200 : 422);
-    }
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'attendance' => $result['attendance'],
+                'staff' => [
+                    'name' => $staff->name,
+                    'staff_code' => $staff->staff_code,
+                    'institution' => $staff->institution,
+                    'department' => $staff->department ?? '-',
+                    'position' => $staff->position ?? '-',
+                    'phone' => $staff->phone ?? '-',
+                    'id_number' => $staff->id_number ?? '-',
+                    'contract_period' => ($staff->contract_start_date && $staff->contract_end_date)
+                        ? $staff->contract_start_date->format('d M Y') . ' s/d ' . $staff->contract_end_date->format('d M Y')
+                        : '-',
+                    'photo_profile' => $staff->photo_profile ? asset('storage/' . $staff->photo_profile) : null,
+                    'status_label' => $status->label()
+                ]
+            ]);
+        }
 
-    public function showQrFallback()
-    {
-        return view('attendance.qr-scan');
+        return response()->json([
+            'success' => false,
+            'message' => $result['message'],
+        ], 422);
     }
 
     /**
